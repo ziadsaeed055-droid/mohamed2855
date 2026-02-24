@@ -25,6 +25,7 @@ import {
   type ProductType,
   type OutfitItem,
   type Product,
+  type ColorSelection,
 } from "@/lib/types"
 import {
   ArrowRight,
@@ -51,6 +52,7 @@ import {
   Loader2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { ColorSearchSelector } from "@/components/color-search-selector"
 
 const productTypeIcons = {
   single: Package,
@@ -99,7 +101,7 @@ export default function AddProductPage() {
     isFeatured: false,
   })
 
-  const [selectedColors, setSelectedColors] = useState<string[]>([])
+  const [selectedColors, setSelectedColors] = useState<ColorSelection[]>([])
   const [selectedSizes, setSelectedSizes] = useState<string[]>([])
   const [mainImage, setMainImage] = useState("")
   const [additionalImages, setAdditionalImages] = useState<string[]>([])
@@ -424,7 +426,7 @@ export default function AddProductPage() {
     if (sectionIndex === getSectionIndex("colors")) {
       // Colors & Sizes section
       if (selectedColors.length === 0) {
-        errors.push(t("يجب اختيار لون واحد على الأقل", "At least one color is required"))
+        errors.push(t("يجب اختيار لون مع درجة واحدة على الأقل", "At least one color with shade is required"))
       }
       if (selectedSizes.length === 0) {
         errors.push(t("يجب اختيار مقاس واحد على الأقل", "At least one size is required"))
@@ -458,7 +460,7 @@ export default function AddProductPage() {
       if (formData.discount) {
         const discountNum = Number.parseFloat(formData.discount)
         if (discountNum < 0 || discountNum > 100) {
-          errors.push(t("الخصم يجب أن يكون بين 0 و 100", "Discount must be between 0 and 100"))
+          errors.push(t("الخصم يج�� أن يكون بين 0 و 100", "Discount must be between 0 and 100"))
         }
       }
 
@@ -1150,38 +1152,18 @@ export default function AddProductPage() {
                 </div>
 
                 <div className="space-y-8">
-                  {/* Colors */}
+                  {/* Colors & Shades - New System */}
                   <div className="space-y-4">
-                    <Label className="text-base font-semibold">{t("الألوان المتاحة", "Available Colors")}</Label>
-                    <div className="flex flex-wrap gap-3">
-                      {COLORS.map((color) => (
-                        <button
-                          key={color.id}
-                          type="button"
-                          onClick={() => {
-                            if (selectedColors.includes(color.hex)) {
-                              setSelectedColors(selectedColors.filter((c) => c !== color.hex))
-                            } else {
-                              setSelectedColors([...selectedColors, color.hex])
-                            }
-                          }}
-                          className={cn(
-                            "w-12 h-12 rounded-xl border-2 transition-all duration-300 flex items-center justify-center hover:scale-110",
-                            selectedColors.includes(color.hex)
-                              ? "border-primary ring-4 ring-primary/20 scale-110"
-                              : "border-transparent hover:border-muted-foreground/30",
-                          )}
-                          style={{ backgroundColor: color.hex }}
-                          title={t(color.nameAr, color.nameEn)}
-                        >
-                          {selectedColors.includes(color.hex) && (
-                            <Check
-                              className={cn("w-5 h-5", color.hex === "#FFFFFF" ? "text-foreground" : "text-white")}
-                            />
-                          )}
-                        </button>
-                      ))}
-                    </div>
+                    <ColorSearchSelector
+                      value={null}
+                      onChange={() => {}} // Not used in multi-select mode
+                      multiSelect={true}
+                      selectedColors={selectedColors}
+                      onMultipleChange={setSelectedColors}
+                      showLabel={true}
+                      label={t("الألوان والدرجات المتاحة", "Available Colors & Shades")}
+                      placeholder={t("ابحث عن لون أو درجة...", "Search for a color or shade...")}
+                    />
                     {selectedColors.length > 0 && (
                       <p className="text-sm text-muted-foreground">
                         {t("الألوان المختارة:", "Selected colors:")} {selectedColors.length}

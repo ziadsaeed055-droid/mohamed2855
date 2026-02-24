@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Star, X } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
+import { ColorSearchSelector } from "@/components/color-search-selector"
+import type { ColorSelection } from "@/lib/types"
 
 interface AdvancedFiltersProps {
   onFiltersChange: (filters: FilterState) => void
@@ -20,7 +22,8 @@ export interface FilterState {
   priceRange: [number, number]
   categories: string[]
   brands: string[]
-  colors: string[]
+  colors: ColorSelection[]  // Updated to use new ColorSelection format
+  colorShades?: string[]    // Optional: specific shade IDs for granular filtering
   rating: number
   inStock: boolean
 }
@@ -56,11 +59,8 @@ export function AdvancedFilters({ onFiltersChange, categories, brands, colors }:
     updateFilters("brands", newBrands)
   }
 
-  const handleColorToggle = (color: string) => {
-    const newColors = filters.colors.includes(color)
-      ? filters.colors.filter(c => c !== color)
-      : [...filters.colors, color]
-    updateFilters("colors", newColors)
+  const handleColorToggle = (selectedColors: ColorSelection[]) => {
+    updateFilters("colors", selectedColors)
   }
 
   const resetFilters = () => {
@@ -69,6 +69,7 @@ export function AdvancedFilters({ onFiltersChange, categories, brands, colors }:
       categories: [],
       brands: [],
       colors: [],
+      colorShades: [],
       rating: 0,
       inStock: false
     }
@@ -188,33 +189,19 @@ export function AdvancedFilters({ onFiltersChange, categories, brands, colors }:
         </div>
       )}
 
-      {/* Colors */}
+      {/* Colors & Shades */}
       {colors.length > 0 && (
         <div className="space-y-3">
-          <Label className="text-sm font-semibold">
-            {t("الألوان", "Colors")}
-          </Label>
-          <div className="flex flex-wrap gap-2">
-            {colors.map((color) => (
-              <button
-                key={color}
-                onClick={() => handleColorToggle(color)}
-                className={`relative w-10 h-10 rounded-full border-2 transition-all ${
-                  filters.colors.includes(color)
-                    ? "border-primary ring-2 ring-primary/30 scale-110"
-                    : "border-border hover:scale-105"
-                }`}
-                style={{ backgroundColor: color }}
-                title={color}
-              >
-                {filters.colors.includes(color) && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-3 h-3 bg-white rounded-full border border-primary" />
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
+          <ColorSearchSelector
+            value={null}
+            onChange={() => {}} // Not used in filter mode
+            multiSelect={true}
+            selectedColors={filters.colors}
+            onMultipleChange={handleColorToggle}
+            showLabel={true}
+            label={t("الألوان والدرجات", "Colors & Shades")}
+            compact={true}
+          />
         </div>
       )}
 

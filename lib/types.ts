@@ -11,11 +11,11 @@ export interface Product {
   notesEn: string
   afterPurchaseNotesAr: string
   afterPurchaseNotesEn: string
-  colors: string[]
+  colors: ColorSelection[]  // Updated: Now uses ColorSelection with variants
   sizes: string[]
   mainImage: string
   additionalImages: string[]
-  colorImages?: { [colorId: string]: string } // Map color ID to product image URL
+  colorImages?: { [shadeId: string]: string } // Map shade ID (e.g., "blue-500") to product image URL
   costPrice: number
   salePrice: number
   profit: number
@@ -73,7 +73,8 @@ export interface CartItem {
   productId: string
   product: Product
   quantity: number
-  selectedColor: string
+  selectedColor?: ColorSelection  // Updated: Now uses ColorSelection with shade info
+  selectedColorId?: string // Fallback for backward compatibility
   selectedSize: string
   outfitSizes?: { [itemIndex: number]: string }
   customValues?: { [optionName: string]: string }
@@ -221,32 +222,287 @@ export function findSubCategoryById(id: string): { category: Category; subCatego
   return undefined
 }
 
-export const COLORS = [
-  { id: "black", nameAr: "أسود", nameEn: "Black", hex: "#000000" },
-  { id: "white", nameAr: "أبيض", nameEn: "White", hex: "#FFFFFF" },
-  { id: "navy", nameAr: "كحلي", nameEn: "Navy", hex: "#1e3a8a" },
-  { id: "blue", nameAr: "أزرق", nameEn: "Blue", hex: "#3b82f6" },
-  { id: "sky-blue", nameAr: "أزرق سماوي", nameEn: "Sky Blue", hex: "#0ea5e9" },
-  { id: "red", nameAr: "أحمر", nameEn: "Red", hex: "#ef4444" },
-  { id: "dark-red", nameAr: "أحمر غامق", nameEn: "Dark Red", hex: "#991b1b" },
-  { id: "green", nameAr: "أخضر", nameEn: "Green", hex: "#22c55e" },
-  { id: "dark-green", nameAr: "أخضر غامق", nameEn: "Dark Green", hex: "#15803d" },
-  { id: "teal", nameAr: "أزرق مخضر", nameEn: "Teal", hex: "#14b8a6" },
-  { id: "gray", nameAr: "رمادي", nameEn: "Gray", hex: "#6b7280" },
-  { id: "light-gray", nameAr: "رمادي فاتح", nameEn: "Light Gray", hex: "#d1d5db" },
-  { id: "beige", nameAr: "بيج", nameEn: "Beige", hex: "#d4a574" },
-  { id: "tan", nameAr: "بني فاتح", nameEn: "Tan", hex: "#d2b48c" },
-  { id: "brown", nameAr: "بني", nameEn: "Brown", hex: "#92400e" },
-  { id: "dark-brown", nameAr: "بني غامق", nameEn: "Dark Brown", hex: "#5a3a1a" },
-  { id: "pink", nameAr: "وردي", nameEn: "Pink", hex: "#ec4899" },
-  { id: "magenta", nameAr: "بنفسجي وردي", nameEn: "Magenta", hex: "#d946ef" },
-  { id: "gold", nameAr: "ذهبي", nameEn: "Gold", hex: "#eab308" },
-  { id: "silver", nameAr: "فضي", nameEn: "Silver", hex: "#c0c0c0" },
-  { id: "orange", nameAr: "برتقالي", nameEn: "Orange", hex: "#f97316" },
-  { id: "maroon", nameAr: "عنابي", nameEn: "Maroon", hex: "#800000" },
-  { id: "cream", nameAr: "كريمي", nameEn: "Cream", hex: "#fffdd0" },
-  { id: "charcoal", nameAr: "فحمي", nameEn: "Charcoal", hex: "#36454f" },
+// ================== COLOR VARIANTS SYSTEM ==================
+export interface ColorVariant {
+  id: string                    // "blue-100", "blue-500", "blue-900"
+  nameAr: string               // "أزرق فاتح جداً"
+  nameEn: string               // "Very Light Blue"
+  hex: string                  // "#3b82f6"
+  shade: number                // 100-900 (50, 100, 200, 300, 400, 500, 600, 700, 800, 900)
+  parentColorId: string        // "blue" - الرابط للون الأساسي
+  shadeNameAr: string          // "فاتح جداً", "فاتح", "متوسط", "غامق", "غامق جداً"
+  shadeNameEn: string          // "Very Light", "Light", "Medium", "Dark", "Very Dark"
+}
+
+export interface BaseColor {
+  id: string                   // "black", "blue", "red"
+  nameAr: string
+  nameEn: string
+  variants: ColorVariant[]     // جميع الدرجات
+  displayColor?: string        // لون العرض الافتراضي (عادة الدرجة 500)
+}
+
+export interface ColorSelection {
+  colorId: string              // المجموعة الأساسية: "blue"
+  shadeId: string             // معرف الدرجة: "blue-500"
+  label: string               // العرض الكامل: "أزرق متوسط" / "Blue Medium"
+}
+
+// ================== COLOR SYSTEM ==================
+export const COLOR_SHADES = {
+  50: { ar: "فاتح جداً جداً", en: "Ultra Light" },
+  100: { ar: "فاتح جداً", en: "Very Light" },
+  200: { ar: "فاتح", en: "Light" },
+  300: { ar: "فاتح نسبياً", en: "Somewhat Light" },
+  400: { ar: "فاتح قليلاً", en: "Slightly Light" },
+  500: { ar: "متوسط", en: "Medium" },
+  600: { ar: "غامق قليلاً", en: "Slightly Dark" },
+  700: { ar: "غامق نسبياً", en: "Somewhat Dark" },
+  800: { ar: "غامق", en: "Dark" },
+  900: { ar: "غامق جداً", en: "Very Dark" },
+} as const
+
+// Base color definitions with variants
+export const COLORS: BaseColor[] = [
+  {
+    id: "black",
+    nameAr: "أسود",
+    nameEn: "Black",
+    displayColor: "#000000",
+    variants: [
+      { id: "black-900", nameAr: "أسود", nameEn: "Black", hex: "#000000", shade: 900, parentColorId: "black", shadeNameAr: "أسود", shadeNameEn: "Black" }
+    ]
+  },
+  {
+    id: "white",
+    nameAr: "أبيض",
+    nameEn: "White",
+    displayColor: "#FFFFFF",
+    variants: [
+      { id: "white-50", nameAr: "أبيض", nameEn: "White", hex: "#FFFFFF", shade: 50, parentColorId: "white", shadeNameAr: "أبيض", shadeNameEn: "White" }
+    ]
+  },
+  {
+    id: "navy",
+    nameAr: "كحلي",
+    nameEn: "Navy",
+    displayColor: "#1e3a8a",
+    variants: [
+      { id: "navy-100", nameAr: "كحلي فاتح جداً", nameEn: "Navy Very Light", hex: "#e0e7ff", shade: 100, parentColorId: "navy", shadeNameAr: "فاتح جداً", shadeNameEn: "Very Light" },
+      { id: "navy-200", nameAr: "كحلي فاتح", nameEn: "Navy Light", hex: "#c7d2fe", shade: 200, parentColorId: "navy", shadeNameAr: "فاتح", shadeNameEn: "Light" },
+      { id: "navy-300", nameAr: "كحلي فاتح نسبياً", nameEn: "Navy Somewhat Light", hex: "#a5b4fc", shade: 300, parentColorId: "navy", shadeNameAr: "فاتح نسبياً", shadeNameEn: "Somewhat Light" },
+      { id: "navy-400", nameAr: "كحلي فاتح قليلاً", nameEn: "Navy Slightly Light", hex: "#818cf8", shade: 400, parentColorId: "navy", shadeNameAr: "فاتح قليلاً", shadeNameEn: "Slightly Light" },
+      { id: "navy-500", nameAr: "كحلي متوسط", nameEn: "Navy Medium", hex: "#6366f1", shade: 500, parentColorId: "navy", shadeNameAr: "متوسط", shadeNameEn: "Medium" },
+      { id: "navy-600", nameAr: "كحلي غامق قليلاً", nameEn: "Navy Slightly Dark", hex: "#4f46e5", shade: 600, parentColorId: "navy", shadeNameAr: "غامق قليلاً", shadeNameEn: "Slightly Dark" },
+      { id: "navy-700", nameAr: "كحلي غامق نسبياً", nameEn: "Navy Somewhat Dark", hex: "#4338ca", shade: 700, parentColorId: "navy", shadeNameAr: "غامق نسبياً", shadeNameEn: "Somewhat Dark" },
+      { id: "navy-800", nameAr: "كحلي غامق", nameEn: "Navy Dark", hex: "#3730a3", shade: 800, parentColorId: "navy", shadeNameAr: "غامق", shadeNameEn: "Dark" },
+      { id: "navy-900", nameAr: "كحلي غامق جداً", nameEn: "Navy Very Dark", hex: "#1e3a8a", shade: 900, parentColorId: "navy", shadeNameAr: "غامق جداً", shadeNameEn: "Very Dark" }
+    ]
+  },
+  {
+    id: "blue",
+    nameAr: "أزرق",
+    nameEn: "Blue",
+    displayColor: "#3b82f6",
+    variants: [
+      { id: "blue-50", nameAr: "أزرق فاتح جداً جداً", nameEn: "Blue Ultra Light", hex: "#eff6ff", shade: 50, parentColorId: "blue", shadeNameAr: "فاتح جداً جداً", shadeNameEn: "Ultra Light" },
+      { id: "blue-100", nameAr: "أزرق فاتح جداً", nameEn: "Blue Very Light", hex: "#dbeafe", shade: 100, parentColorId: "blue", shadeNameAr: "فاتح جداً", shadeNameEn: "Very Light" },
+      { id: "blue-200", nameAr: "أزرق فاتح", nameEn: "Blue Light", hex: "#bfdbfe", shade: 200, parentColorId: "blue", shadeNameAr: "فاتح", shadeNameEn: "Light" },
+      { id: "blue-300", nameAr: "أزرق فاتح نسبياً", nameEn: "Blue Somewhat Light", hex: "#93c5fd", shade: 300, parentColorId: "blue", shadeNameAr: "فاتح نسبياً", shadeNameEn: "Somewhat Light" },
+      { id: "blue-400", nameAr: "أزرق فاتح قليلاً", nameEn: "Blue Slightly Light", hex: "#60a5fa", shade: 400, parentColorId: "blue", shadeNameAr: "فاتح قليلاً", shadeNameEn: "Slightly Light" },
+      { id: "blue-500", nameAr: "أزرق متوسط", nameEn: "Blue Medium", hex: "#3b82f6", shade: 500, parentColorId: "blue", shadeNameAr: "متوسط", shadeNameEn: "Medium" },
+      { id: "blue-600", nameAr: "أزرق غامق قليلاً", nameEn: "Blue Slightly Dark", hex: "#2563eb", shade: 600, parentColorId: "blue", shadeNameAr: "غامق قليلاً", shadeNameEn: "Slightly Dark" },
+      { id: "blue-700", nameAr: "أزرق غامق نسبياً", nameEn: "Blue Somewhat Dark", hex: "#1d4ed8", shade: 700, parentColorId: "blue", shadeNameAr: "غامق نسبياً", shadeNameEn: "Somewhat Dark" },
+      { id: "blue-800", nameAr: "أزرق غامق", nameEn: "Blue Dark", hex: "#1e40af", shade: 800, parentColorId: "blue", shadeNameAr: "غامق", shadeNameEn: "Dark" },
+      { id: "blue-900", nameAr: "أزرق غامق جداً", nameEn: "Blue Very Dark", hex: "#1e3a8a", shade: 900, parentColorId: "blue", shadeNameAr: "غامق جداً", shadeNameEn: "Very Dark" }
+    ]
+  },
+  {
+    id: "sky-blue",
+    nameAr: "أزرق سماوي",
+    nameEn: "Sky Blue",
+    displayColor: "#0ea5e9",
+    variants: [
+      { id: "sky-blue-50", nameAr: "أزرق سماوي فاتح جداً جداً", nameEn: "Sky Blue Ultra Light", hex: "#f0f9ff", shade: 50, parentColorId: "sky-blue", shadeNameAr: "فاتح جداً جداً", shadeNameEn: "Ultra Light" },
+      { id: "sky-blue-100", nameAr: "أزرق سماوي فاتح جداً", nameEn: "Sky Blue Very Light", hex: "#e0f2fe", shade: 100, parentColorId: "sky-blue", shadeNameAr: "فاتح جداً", shadeNameEn: "Very Light" },
+      { id: "sky-blue-200", nameAr: "أزرق سماوي فاتح", nameEn: "Sky Blue Light", hex: "#bae6fd", shade: 200, parentColorId: "sky-blue", shadeNameAr: "فاتح", shadeNameEn: "Light" },
+      { id: "sky-blue-300", nameAr: "أزرق سماوي فاتح نسبياً", nameEn: "Sky Blue Somewhat Light", hex: "#7dd3fc", shade: 300, parentColorId: "sky-blue", shadeNameAr: "فاتح نسبياً", shadeNameEn: "Somewhat Light" },
+      { id: "sky-blue-400", nameAr: "أزرق سماوي فاتح قليلاً", nameEn: "Sky Blue Slightly Light", hex: "#38bdf8", shade: 400, parentColorId: "sky-blue", shadeNameAr: "فاتح قليلاً", shadeNameEn: "Slightly Light" },
+      { id: "sky-blue-500", nameAr: "أزرق سماوي متوسط", nameEn: "Sky Blue Medium", hex: "#0ea5e9", shade: 500, parentColorId: "sky-blue", shadeNameAr: "متوسط", shadeNameEn: "Medium" },
+      { id: "sky-blue-600", nameAr: "أزرق سماوي غامق قليلاً", nameEn: "Sky Blue Slightly Dark", hex: "#0284c7", shade: 600, parentColorId: "sky-blue", shadeNameAr: "غامق قليلاً", shadeNameEn: "Slightly Dark" },
+      { id: "sky-blue-700", nameAr: "أزرق سماوي غامق نسبياً", nameEn: "Sky Blue Somewhat Dark", hex: "#0369a1", shade: 700, parentColorId: "sky-blue", shadeNameAr: "غامق نسبياً", shadeNameEn: "Somewhat Dark" },
+      { id: "sky-blue-800", nameAr: "أزرق سماوي غامق", nameEn: "Sky Blue Dark", hex: "#075985", shade: 800, parentColorId: "sky-blue", shadeNameAr: "غامق", shadeNameEn: "Dark" },
+      { id: "sky-blue-900", nameAr: "أزرق سماوي غامق جداً", nameEn: "Sky Blue Very Dark", hex: "#0c4a6e", shade: 900, parentColorId: "sky-blue", shadeNameAr: "غامق جداً", shadeNameEn: "Very Dark" }
+    ]
+  },
+  {
+    id: "red",
+    nameAr: "أحمر",
+    nameEn: "Red",
+    displayColor: "#ef4444",
+    variants: [
+      { id: "red-50", nameAr: "أحمر فاتح جداً جداً", nameEn: "Red Ultra Light", hex: "#fef2f2", shade: 50, parentColorId: "red", shadeNameAr: "فاتح جداً جداً", shadeNameEn: "Ultra Light" },
+      { id: "red-100", nameAr: "أحمر فاتح جداً", nameEn: "Red Very Light", hex: "#fee2e2", shade: 100, parentColorId: "red", shadeNameAr: "فاتح جداً", shadeNameEn: "Very Light" },
+      { id: "red-200", nameAr: "أحمر فاتح", nameEn: "Red Light", hex: "#fecaca", shade: 200, parentColorId: "red", shadeNameAr: "فاتح", shadeNameEn: "Light" },
+      { id: "red-300", nameAr: "أحمر فاتح نسبياً", nameEn: "Red Somewhat Light", hex: "#fca5a5", shade: 300, parentColorId: "red", shadeNameAr: "فاتح نسبياً", shadeNameEn: "Somewhat Light" },
+      { id: "red-400", nameAr: "أحمر فاتح قليلاً", nameEn: "Red Slightly Light", hex: "#f87171", shade: 400, parentColorId: "red", shadeNameAr: "فاتح قليلاً", shadeNameEn: "Slightly Light" },
+      { id: "red-500", nameAr: "أحمر متوسط", nameEn: "Red Medium", hex: "#ef4444", shade: 500, parentColorId: "red", shadeNameAr: "متوسط", shadeNameEn: "Medium" },
+      { id: "red-600", nameAr: "أحمر غامق قليلاً", nameEn: "Red Slightly Dark", hex: "#dc2626", shade: 600, parentColorId: "red", shadeNameAr: "غامق قليلاً", shadeNameEn: "Slightly Dark" },
+      { id: "red-700", nameAr: "أحمر غامق نسبياً", nameEn: "Red Somewhat Dark", hex: "#b91c1c", shade: 700, parentColorId: "red", shadeNameAr: "غامق نسبياً", shadeNameEn: "Somewhat Dark" },
+      { id: "red-800", nameAr: "أحمر غامق", nameEn: "Red Dark", hex: "#991b1b", shade: 800, parentColorId: "red", shadeNameAr: "غامق", shadeNameEn: "Dark" },
+      { id: "red-900", nameAr: "أحمر غامق جداً", nameEn: "Red Very Dark", hex: "#7f1d1d", shade: 900, parentColorId: "red", shadeNameAr: "غامق جداً", shadeNameEn: "Very Dark" }
+    ]
+  },
+  {
+    id: "green",
+    nameAr: "أخضر",
+    nameEn: "Green",
+    displayColor: "#22c55e",
+    variants: [
+      { id: "green-50", nameAr: "أخضر فاتح جداً جداً", nameEn: "Green Ultra Light", hex: "#f0fdf4", shade: 50, parentColorId: "green", shadeNameAr: "فاتح جداً جداً", shadeNameEn: "Ultra Light" },
+      { id: "green-100", nameAr: "أخضر فاتح جداً", nameEn: "Green Very Light", hex: "#dcfce7", shade: 100, parentColorId: "green", shadeNameAr: "فاتح جداً", shadeNameEn: "Very Light" },
+      { id: "green-200", nameAr: "أخضر فاتح", nameEn: "Green Light", hex: "#bbf7d0", shade: 200, parentColorId: "green", shadeNameAr: "فاتح", shadeNameEn: "Light" },
+      { id: "green-300", nameAr: "أخضر فاتح نسبياً", nameEn: "Green Somewhat Light", hex: "#86efac", shade: 300, parentColorId: "green", shadeNameAr: "فاتح نسبياً", shadeNameEn: "Somewhat Light" },
+      { id: "green-400", nameAr: "أخضر فاتح قليلاً", nameEn: "Green Slightly Light", hex: "#4ade80", shade: 400, parentColorId: "green", shadeNameAr: "فاتح قليلاً", shadeNameEn: "Slightly Light" },
+      { id: "green-500", nameAr: "أخضر متوسط", nameEn: "Green Medium", hex: "#22c55e", shade: 500, parentColorId: "green", shadeNameAr: "متوسط", shadeNameEn: "Medium" },
+      { id: "green-600", nameAr: "أخضر غامق قليلاً", nameEn: "Green Slightly Dark", hex: "#16a34a", shade: 600, parentColorId: "green", shadeNameAr: "غامق قليلاً", shadeNameEn: "Slightly Dark" },
+      { id: "green-700", nameAr: "أخضر غامق نسبياً", nameEn: "Green Somewhat Dark", hex: "#15803d", shade: 700, parentColorId: "green", shadeNameAr: "غامق نسبياً", shadeNameEn: "Somewhat Dark" },
+      { id: "green-800", nameAr: "أخضر غامق", nameEn: "Green Dark", hex: "#166534", shade: 800, parentColorId: "green", shadeNameAr: "غامق", shadeNameEn: "Dark" },
+      { id: "green-900", nameAr: "أخضر غامق جداً", nameEn: "Green Very Dark", hex: "#14532d", shade: 900, parentColorId: "green", shadeNameAr: "غامق جداً", shadeNameEn: "Very Dark" }
+    ]
+  },
+  {
+    id: "teal",
+    nameAr: "أزرق مخضر",
+    nameEn: "Teal",
+    displayColor: "#14b8a6",
+    variants: [
+      { id: "teal-50", nameAr: "أزرق مخضر فاتح جداً جداً", nameEn: "Teal Ultra Light", hex: "#f0fdfa", shade: 50, parentColorId: "teal", shadeNameAr: "فاتح جداً جداً", shadeNameEn: "Ultra Light" },
+      { id: "teal-100", nameAr: "أزرق مخضر فاتح جداً", nameEn: "Teal Very Light", hex: "#ccfbf1", shade: 100, parentColorId: "teal", shadeNameAr: "فاتح جداً", shadeNameEn: "Very Light" },
+      { id: "teal-200", nameAr: "أزرق مخضر فاتح", nameEn: "Teal Light", hex: "#99f6e4", shade: 200, parentColorId: "teal", shadeNameAr: "فاتح", shadeNameEn: "Light" },
+      { id: "teal-300", nameAr: "أزرق مخضر فاتح نسبياً", nameEn: "Teal Somewhat Light", hex: "#5ee7df", shade: 300, parentColorId: "teal", shadeNameAr: "فاتح نسبياً", shadeNameEn: "Somewhat Light" },
+      { id: "teal-400", nameAr: "أزرق مخضر فاتح قليلاً", nameEn: "Teal Slightly Light", hex: "#2dd4bf", shade: 400, parentColorId: "teal", shadeNameAr: "فاتح قليلاً", shadeNameEn: "Slightly Light" },
+      { id: "teal-500", nameAr: "أزرق مخضر متوسط", nameEn: "Teal Medium", hex: "#14b8a6", shade: 500, parentColorId: "teal", shadeNameAr: "متوسط", shadeNameEn: "Medium" },
+      { id: "teal-600", nameAr: "أزرق مخضر غامق قليلاً", nameEn: "Teal Slightly Dark", hex: "#0d9488", shade: 600, parentColorId: "teal", shadeNameAr: "غامق قليلاً", shadeNameEn: "Slightly Dark" },
+      { id: "teal-700", nameAr: "أزرق مخضر غامق نسبياً", nameEn: "Teal Somewhat Dark", hex: "#0f766e", shade: 700, parentColorId: "teal", shadeNameAr: "غامق نسبياً", shadeNameEn: "Somewhat Dark" },
+      { id: "teal-800", nameAr: "أزرق مخضر غامق", nameEn: "Teal Dark", hex: "#115e59", shade: 800, parentColorId: "teal", shadeNameAr: "غامق", shadeNameEn: "Dark" },
+      { id: "teal-900", nameAr: "أزرق مخضر غامق جداً", nameEn: "Teal Very Dark", hex: "#134e4a", shade: 900, parentColorId: "teal", shadeNameAr: "غامق جداً", shadeNameEn: "Very Dark" }
+    ]
+  },
+  {
+    id: "gray",
+    nameAr: "رمادي",
+    nameEn: "Gray",
+    displayColor: "#6b7280",
+    variants: [
+      { id: "gray-50", nameAr: "رمادي فاتح جداً جداً", nameEn: "Gray Ultra Light", hex: "#f9fafb", shade: 50, parentColorId: "gray", shadeNameAr: "فاتح جداً جداً", shadeNameEn: "Ultra Light" },
+      { id: "gray-100", nameAr: "رمادي فاتح جداً", nameEn: "Gray Very Light", hex: "#f3f4f6", shade: 100, parentColorId: "gray", shadeNameAr: "فاتح جداً", shadeNameEn: "Very Light" },
+      { id: "gray-200", nameAr: "رمادي فاتح", nameEn: "Gray Light", hex: "#e5e7eb", shade: 200, parentColorId: "gray", shadeNameAr: "فاتح", shadeNameEn: "Light" },
+      { id: "gray-300", nameAr: "رمادي فاتح نسبياً", nameEn: "Gray Somewhat Light", hex: "#d1d5db", shade: 300, parentColorId: "gray", shadeNameAr: "فاتح نسبياً", shadeNameEn: "Somewhat Light" },
+      { id: "gray-400", nameAr: "رمادي فاتح قليلاً", nameEn: "Gray Slightly Light", hex: "#9ca3af", shade: 400, parentColorId: "gray", shadeNameAr: "فاتح قليلاً", shadeNameEn: "Slightly Light" },
+      { id: "gray-500", nameAr: "رمادي متوسط", nameEn: "Gray Medium", hex: "#6b7280", shade: 500, parentColorId: "gray", shadeNameAr: "متوسط", shadeNameEn: "Medium" },
+      { id: "gray-600", nameAr: "رمادي غامق قليلاً", nameEn: "Gray Slightly Dark", hex: "#4b5563", shade: 600, parentColorId: "gray", shadeNameAr: "غامق قليلاً", shadeNameEn: "Slightly Dark" },
+      { id: "gray-700", nameAr: "رمادي غامق نسبياً", nameEn: "Gray Somewhat Dark", hex: "#374151", shade: 700, parentColorId: "gray", shadeNameAr: "غامق نسبياً", shadeNameEn: "Somewhat Dark" },
+      { id: "gray-800", nameAr: "رمادي غامق", nameEn: "Gray Dark", hex: "#1f2937", shade: 800, parentColorId: "gray", shadeNameAr: "غامق", shadeNameEn: "Dark" },
+      { id: "gray-900", nameAr: "رمادي غامق جداً", nameEn: "Gray Very Dark", hex: "#111827", shade: 900, parentColorId: "gray", shadeNameAr: "غامق جداً", shadeNameEn: "Very Dark" }
+    ]
+  },
+  {
+    id: "brown",
+    nameAr: "بني",
+    nameEn: "Brown",
+    displayColor: "#92400e",
+    variants: [
+      { id: "brown-50", nameAr: "بني فاتح جداً جداً", nameEn: "Brown Ultra Light", hex: "#fefce8", shade: 50, parentColorId: "brown", shadeNameAr: "فاتح جداً جداً", shadeNameEn: "Ultra Light" },
+      { id: "brown-100", nameAr: "بني فاتح جداً", nameEn: "Brown Very Light", hex: "#fef3c7", shade: 100, parentColorId: "brown", shadeNameAr: "فاتح جداً", shadeNameEn: "Very Light" },
+      { id: "brown-200", nameAr: "بني فاتح", nameEn: "Brown Light", hex: "#fde68a", shade: 200, parentColorId: "brown", shadeNameAr: "فاتح", shadeNameEn: "Light" },
+      { id: "brown-300", nameAr: "بني فاتح نسبياً", nameEn: "Brown Somewhat Light", hex: "#fcd34d", shade: 300, parentColorId: "brown", shadeNameAr: "فاتح نسبياً", shadeNameEn: "Somewhat Light" },
+      { id: "brown-400", nameAr: "بني فاتح قليلاً", nameEn: "Brown Slightly Light", hex: "#fbbf24", shade: 400, parentColorId: "brown", shadeNameAr: "فاتح قليلاً", shadeNameEn: "Slightly Light" },
+      { id: "brown-500", nameAr: "بني متوسط", nameEn: "Brown Medium", hex: "#f59e0b", shade: 500, parentColorId: "brown", shadeNameAr: "متوسط", shadeNameEn: "Medium" },
+      { id: "brown-600", nameAr: "بني غامق قليلاً", nameEn: "Brown Slightly Dark", hex: "#d97706", shade: 600, parentColorId: "brown", shadeNameAr: "غامق قليلاً", shadeNameEn: "Slightly Dark" },
+      { id: "brown-700", nameAr: "بني غامق نسبياً", nameEn: "Brown Somewhat Dark", hex: "#b45309", shade: 700, parentColorId: "brown", shadeNameAr: "غامق نسبياً", shadeNameEn: "Somewhat Dark" },
+      { id: "brown-800", nameAr: "بني غامق", nameEn: "Brown Dark", hex: "#92400e", shade: 800, parentColorId: "brown", shadeNameAr: "غامق", shadeNameEn: "Dark" },
+      { id: "brown-900", nameAr: "بني غامق جداً", nameEn: "Brown Very Dark", hex: "#78350f", shade: 900, parentColorId: "brown", shadeNameAr: "غامق جداً", shadeNameEn: "Very Dark" }
+    ]
+  },
+  {
+    id: "pink",
+    nameAr: "وردي",
+    nameEn: "Pink",
+    displayColor: "#ec4899",
+    variants: [
+      { id: "pink-50", nameAr: "وردي فاتح جداً جداً", nameEn: "Pink Ultra Light", hex: "#fdf2f8", shade: 50, parentColorId: "pink", shadeNameAr: "فاتح جداً جداً", shadeNameEn: "Ultra Light" },
+      { id: "pink-100", nameAr: "وردي فاتح جداً", nameEn: "Pink Very Light", hex: "#fce7f3", shade: 100, parentColorId: "pink", shadeNameAr: "فاتح جداً", shadeNameEn: "Very Light" },
+      { id: "pink-200", nameAr: "وردي فاتح", nameEn: "Pink Light", hex: "#fbcfe8", shade: 200, parentColorId: "pink", shadeNameAr: "فاتح", shadeNameEn: "Light" },
+      { id: "pink-300", nameAr: "وردي فاتح نسبياً", nameEn: "Pink Somewhat Light", hex: "#f8bbd0", shade: 300, parentColorId: "pink", shadeNameAr: "فاتح نسبياً", shadeNameEn: "Somewhat Light" },
+      { id: "pink-400", nameAr: "وردي فاتح قليلاً", nameEn: "Pink Slightly Light", hex: "#f472b6", shade: 400, parentColorId: "pink", shadeNameAr: "فاتح قليلاً", shadeNameEn: "Slightly Light" },
+      { id: "pink-500", nameAr: "وردي متوسط", nameEn: "Pink Medium", hex: "#ec4899", shade: 500, parentColorId: "pink", shadeNameAr: "متوسط", shadeNameEn: "Medium" },
+      { id: "pink-600", nameAr: "وردي غامق قليلاً", nameEn: "Pink Slightly Dark", hex: "#db2777", shade: 600, parentColorId: "pink", shadeNameAr: "غامق قليلاً", shadeNameEn: "Slightly Dark" },
+      { id: "pink-700", nameAr: "وردي غامق نسبياً", nameEn: "Pink Somewhat Dark", hex: "#be185d", shade: 700, parentColorId: "pink", shadeNameAr: "غامق نسبياً", shadeNameEn: "Somewhat Dark" },
+      { id: "pink-800", nameAr: "وردي غامق", nameEn: "Pink Dark", hex: "#9d174d", shade: 800, parentColorId: "pink", shadeNameAr: "غامق", shadeNameEn: "Dark" },
+      { id: "pink-900", nameAr: "وردي غامق جداً", nameEn: "Pink Very Dark", hex: "#831843", shade: 900, parentColorId: "pink", shadeNameAr: "غامق جداً", shadeNameEn: "Very Dark" }
+    ]
+  },
+  {
+    id: "orange",
+    nameAr: "برتقالي",
+    nameEn: "Orange",
+    displayColor: "#f97316",
+    variants: [
+      { id: "orange-50", nameAr: "برتقالي فاتح جداً جداً", nameEn: "Orange Ultra Light", hex: "#fff7ed", shade: 50, parentColorId: "orange", shadeNameAr: "فاتح جداً جداً", shadeNameEn: "Ultra Light" },
+      { id: "orange-100", nameAr: "برتقالي فاتح جداً", nameEn: "Orange Very Light", hex: "#ffedd5", shade: 100, parentColorId: "orange", shadeNameAr: "فاتح جداً", shadeNameEn: "Very Light" },
+      { id: "orange-200", nameAr: "برتقالي فاتح", nameEn: "Orange Light", hex: "#fed7aa", shade: 200, parentColorId: "orange", shadeNameAr: "فاتح", shadeNameEn: "Light" },
+      { id: "orange-300", nameAr: "برتقالي فاتح نسبياً", nameEn: "Orange Somewhat Light", hex: "#fdba74", shade: 300, parentColorId: "orange", shadeNameAr: "فاتح نسبياً", shadeNameEn: "Somewhat Light" },
+      { id: "orange-400", nameAr: "برتقالي فاتح قليلاً", nameEn: "Orange Slightly Light", hex: "#fb923c", shade: 400, parentColorId: "orange", shadeNameAr: "فاتح قليلاً", shadeNameEn: "Slightly Light" },
+      { id: "orange-500", nameAr: "برتقالي متوسط", nameEn: "Orange Medium", hex: "#f97316", shade: 500, parentColorId: "orange", shadeNameAr: "متوسط", shadeNameEn: "Medium" },
+      { id: "orange-600", nameAr: "برتقالي غامق قليلاً", nameEn: "Orange Slightly Dark", hex: "#ea580c", shade: 600, parentColorId: "orange", shadeNameAr: "غامق قليلاً", shadeNameEn: "Slightly Dark" },
+      { id: "orange-700", nameAr: "برتقالي غامق نسبياً", nameEn: "Orange Somewhat Dark", hex: "#c2410c", shade: 700, parentColorId: "orange", shadeNameAr: "غامق نسبياً", shadeNameEn: "Somewhat Dark" },
+      { id: "orange-800", nameAr: "برتقالي غامق", nameEn: "Orange Dark", hex: "#9a3412", shade: 800, parentColorId: "orange", shadeNameAr: "غامق", shadeNameEn: "Dark" },
+      { id: "orange-900", nameAr: "برتقالي غامق جداً", nameEn: "Orange Very Dark", hex: "#7c2d12", shade: 900, parentColorId: "orange", shadeNameAr: "غامق جداً", shadeNameEn: "Very Dark" }
+    ]
+  },
 ]
+
+// ================== HELPER FUNCTIONS ==================
+
+/**
+ * Get all variants of a specific color
+ */
+export function getColorVariants(colorId: string): ColorVariant[] {
+  const color = COLORS.find(c => c.id === colorId)
+  return color?.variants || []
+}
+
+/**
+ * Search colors by name (Arabic or English)
+ */
+export function searchColorsByName(query: string): BaseColor[] {
+  const lowerQuery = query.toLowerCase()
+  return COLORS.filter(color =>
+    color.nameAr.toLowerCase().includes(lowerQuery) ||
+    color.nameEn.toLowerCase().includes(lowerQuery)
+  )
+}
+
+/**
+ * Get a specific variant by ID
+ */
+export function getColorVariantById(variantId: string): ColorVariant | undefined {
+  for (const color of COLORS) {
+    const variant = color.variants.find(v => v.id === variantId)
+    if (variant) return variant
+  }
+  return undefined
+}
+
+/**
+ * Get color label (display name) with shade
+ */
+export function getColorLabel(colorId: string, shadeId: string, lang: "ar" | "en" = "ar"): string {
+  const variant = getColorVariantById(shadeId)
+  if (!variant) return colorId
+  return lang === "ar" ? variant.nameAr : variant.nameEn
+}
 
 export const SIZES = [
   "XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL",
