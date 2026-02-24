@@ -16,6 +16,8 @@ export interface Product {
   mainImage: string
   additionalImages: string[]
   colorImages?: { [shadeId: string]: string } // Map shade ID (e.g., "blue-500") to product image URL
+  colorSizeStock?: ColorSizeStock[] // Stock tracking for each color-size combination
+  colorRatings?: ColorRating[] // Ratings for each color shade
   costPrice: number
   salePrice: number
   profit: number
@@ -246,6 +248,22 @@ export interface ColorSelection {
   colorId: string              // المجموعة الأساسية: "blue"
   shadeId: string             // معرف الدرجة: "blue-500"
   label: string               // العرض الكامل: "أزرق متوسط" / "Blue Medium"
+}
+
+export interface ColorSizeStock {
+  shadeId: string             // "blue-500"
+  size: string                // "S", "M", "L", "XL"
+  quantity: number            // الكمية المتاحة
+  reservedQuantity?: number   // الكمية المحجوزة
+  isLowStock?: boolean        // تنبيه عند انخفاض المخزون
+}
+
+export interface ColorRating {
+  shadeId: string             // "blue-500"
+  averageRating: number       // 1-5
+  reviewCount: number         // عدد التقييمات
+  colorAccuracyRating: number // دقة اللون في الصورة
+  popularityScore: number     // معدل الشراء
 }
 
 // ================== COLOR SYSTEM ==================
