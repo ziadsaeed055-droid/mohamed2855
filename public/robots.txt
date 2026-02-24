@@ -1,0 +1,69 @@
+# Seven Blue - Fashion Store SEO Configuration
+# Robots configuration for search engine crawlers
+
+# Default rules for all crawlers
+User-agent: *
+Allow: /
+Allow: /shop
+Allow: /product
+Allow: /category
+Allow: /search
+Allow: /cart
+Allow: /account
+Allow: /orders
+Allow: /featured
+
+# Disallow admin and sensitive paths
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /*.json$
+Disallow: /*.csv$
+Disallow: /*.xml$
+Disallow: /private/
+Disallow: /temp/
+Disallow: /cache/
+
+# Allow access to important files
+Allow: /sitemap.xml
+Allow: /sitemap-*.xml
+Allow: /robots.txt
+Allow: /favicon.ico
+
+# Crawl delay and request rate
+Crawl-delay: 1
+Request-rate: 1/5s
+
+# Google specific rules
+User-agent: Googlebot
+Allow: /
+Allow: /sitemap.xml
+Crawl-delay: 0
+Request-rate: unlimited
+
+# Bing specific rules
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+Request-rate: 1/5s
+
+# Yandex specific rules
+User-agent: YandexBot
+Allow: /
+Crawl-delay: 1
+
+# Block bad bots
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+# Sitemap location
+Sitemap: https://sevenblue.store/sitemap.xml
+Sitemap: https://sevenblue.store/sitemap-products.xml
+Sitemap: https://sevenblue.store/sitemap-pages.xml

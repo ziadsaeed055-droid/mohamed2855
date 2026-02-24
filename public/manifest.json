@@ -1,0 +1,120 @@
+{
+  "name": "Seven Blue - متجر الملابس الراقية الفاخرة",
+  "short_name": "Seven Blue",
+  "description": "متجر متخصص في الملابس الراقية والفاخرة للرجال والنساء والأطفال",
+  "start_url": "https://sevenblue.store",
+  "scope": "https://sevenblue.store",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#0d3b66",
+  "background_color": "#ffffff",
+  "lang": "ar",
+  "dir": "rtl",
+  "categories": ["shopping", "lifestyle"],
+  "screenshots": [
+    {
+      "src": "/images/605811209-122158818428830285-7412234705201285219-n-removebg-preview.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/605811209-122158818428830285-7412234705201285219-n-removebg-preview.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/605811209-122158818428830285-7412234705201285219-n-removebg-preview.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/605811209-122158818428830285-7412234705201285219-n-removebg-preview.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "المتجر",
+      "short_name": "متجر",
+      "description": "تسوق الملابس الراقية",
+      "url": "https://sevenblue.store/shop",
+      "icons": [
+        {
+          "src": "/favicon-32x32.png",
+          "sizes": "32x32",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "الرجالي",
+      "short_name": "رجالي",
+      "description": "ملابس رجالية راقية",
+      "url": "https://sevenblue.store/shop?category=men",
+      "icons": [
+        {
+          "src": "/favicon-32x32.png",
+          "sizes": "32x32",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "الحريمي",
+      "short_name": "حريمي",
+      "description": "ملابس نسائية راقية",
+      "url": "https://sevenblue.store/shop?category=women",
+      "icons": [
+        {
+          "src": "/favicon-32x32.png",
+          "sizes": "32x32",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "screenshots": [
+    {
+      "src": "/images/605811209-122158818428830285-7412234705201285219-n-removebg-preview.png",
+      "sizes": "540x720",
+      "type": "image/png"
+    }
+  ]
+}
