@@ -1231,7 +1231,7 @@ export default function AddProductPage() {
                   </div>
                   <div>
                     <h2 className="text-lg font-bold text-foreground">
-                      {productType === "outfit" ? t("صور الطقم", "Outfit Images") : t("صور المنت��", "Product Images")}
+                      {productType === "outfit" ? t("صور الطقم", "Outfit Images") : t("صور المنت����", "Product Images")}
                     </h2>
                     <p className="text-sm text-muted-foreground">
                       {productType === "outfit"
@@ -1339,101 +1339,73 @@ export default function AddProductPage() {
 
                       <div className="grid gap-4">
                         {selectedColors.map((colorSelection) => {
-                          const variant = selectedColors.find(c => c.shadeId === colorSelection.shadeId)
-                          if (!variant) return null
-                          
                           const hex = COLORS.find(c => c.id === colorSelection.colorId)?.variants.find(v => v.id === colorSelection.shadeId)?.hex
                           
                           return (
-                            <div key={colorSelection.shadeId} className="flex items-center gap-4 p-4 bg-muted/50 rounded-xl">
-                              <div
-                                className="w-12 h-12 rounded-lg border-2 flex-shrink-0"
-                                style={{ backgroundColor: hex || '#cccccc' }}
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-foreground mb-2">
-                                  {colorSelection.label}
-                                </p>
-                                {colorImages[colorSelection.shadeId] ? (
-                                  <div className="relative w-32 h-32 rounded-lg overflow-hidden border-2">
-                                    <Image
-                                      src={colorImages[colorSelection.shadeId]}
-                                      alt={colorSelection.label}
-                                      fill
-                                      className="object-cover"
-                                    />
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const newColorImages = { ...colorImages }
-                                        delete newColorImages[colorSelection.shadeId]
-                                        setColorImages(newColorImages)
-                                      }}
-                                      className="absolute top-2 end-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:scale-110 transition-transform"
-                                    >
-                                      <X className="w-3 h-3" />
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-dashed border-primary/30 hover:border-primary cursor-pointer transition-colors">
-                                    <Upload className="w-4 h-4 text-primary" />
-                                    <span className="text-sm text-primary font-medium">{t("رفع صورة", "Upload")}</span>
-                                    <input
-                                      type="file"
-                                      accept="image/*"
-                                      className="hidden"
-                                      onChange={(e) => {
-                                        const file = e.target.files?.[0]
-                                        if (!file) return
-                                        const reader = new FileReader()
-                                        reader.onloadend = () => {
-                                          setColorImages({
-                                            ...colorImages,
-                                            [colorSelection.shadeId]: reader.result as string
-                                          })
-                                        }
-                                        reader.readAsDataURL(file)
-                                      }}
-                                    />
-                                  </label>
-                                )}
+                            <div key={colorSelection.shadeId} className="flex flex-col p-4 bg-muted/50 rounded-xl border border-border">
+                              {/* Color Header with Name and Preview */}
+                              <div className="flex items-center gap-3 mb-4">
+                                <div
+                                  className="w-16 h-16 rounded-lg border-2 border-border shadow-sm flex-shrink-0"
+                                  style={{ backgroundColor: hex || '#cccccc' }}
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-bold text-foreground">
+                                    {colorSelection.label}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {colorSelection.shadeId}
+                                  </p>
+                                </div>
                               </div>
-                                <p className="text-sm font-medium">{t(color?.nameAr || "لون", color?.nameEn || "Color")}</p>
-                                {colorImages[colorHex] ? (
-                                  <div className="flex items-center gap-3 mt-2">
-                                    <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
-                                      <Image src={colorImages[colorHex]} alt={`${colorHex} image`} fill className="object-cover" />
-                                    </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => setColorImages({ ...colorImages, [colorHex]: "" })}
-                                      className="text-sm px-3 py-1 bg-destructive/10 text-destructive hover:bg-destructive/20 rounded-lg transition-colors"
-                                    >
-                                      {t("إزالة", "Remove")}
-                                    </button>
+
+                              {/* Image Upload Section */}
+                              {colorImages[colorSelection.shadeId] ? (
+                                <div className="relative w-full h-48 rounded-lg overflow-hidden border-2 border-border">
+                                  <Image
+                                    src={colorImages[colorSelection.shadeId]}
+                                    alt={colorSelection.label}
+                                    fill
+                                    className="object-cover"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newColorImages = { ...colorImages }
+                                      delete newColorImages[colorSelection.shadeId]
+                                      setColorImages(newColorImages)
+                                    }}
+                                    className="absolute top-2 end-2 w-8 h-8 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-lg"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <label className="flex flex-col items-center justify-center w-full h-48 rounded-lg border-2 border-dashed border-primary/50 hover:border-primary hover:bg-primary/5 cursor-pointer transition-all group">
+                                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <Upload className="w-8 h-8 text-primary/60 group-hover:text-primary mb-2" />
+                                    <p className="text-sm font-medium text-primary">{t("اضغط لرفع صورة اللون", "Click to upload color image")}</p>
+                                    <p className="text-xs text-muted-foreground">{t(colorSelection.label, colorSelection.label)}</p>
                                   </div>
-                                ) : (
-                                  <label className="flex items-center justify-center gap-2 mt-2 px-3 py-2 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all">
-                                    <Upload className="w-4 h-4" />
-                                    <span className="text-xs">{t("رفع صورة", "Upload")}</span>
-                                    <input
-                                      type="file"
-                                      accept="image/*"
-                                      className="hidden"
-                                      onChange={(e) => {
-                                        const file = e.target.files?.[0]
-                                        if (!file) return
-                                        const reader = new FileReader()
-                                        reader.onloadend = () => {
-                                          const result = reader.result as string
-                                          setColorImages({ ...colorImages, [colorHex]: result })
-                                        }
-                                        reader.readAsDataURL(file)
-                                      }}
-                                    />
-                                  </label>
-                                )}
-                              </div>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0]
+                                      if (!file) return
+                                      const reader = new FileReader()
+                                      reader.onloadend = () => {
+                                        setColorImages({
+                                          ...colorImages,
+                                          [colorSelection.shadeId]: reader.result as string
+                                        })
+                                      }
+                                      reader.readAsDataURL(file)
+                                    }}
+                                  />
+                                </label>
+                              )}
                             </div>
                           )
                         })}
