@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { collection, addDoc, serverTimestamp, getDocs, query, orderBy } from "firebase/firestore"
+import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, where } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -53,6 +53,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ColorSearchSelector } from "@/components/color-search-selector"
+import { ColorQuickSelect } from "@/components/color-quick-select"
 
 const productTypeIcons = {
   single: Package,
@@ -102,6 +103,7 @@ export default function AddProductPage() {
   })
 
   const [selectedColors, setSelectedColors] = useState<ColorSelection[]>([])
+  const [lastQuickColor, setLastQuickColor] = useState<ColorSelection | null>(null)
   const [selectedSizes, setSelectedSizes] = useState<string[]>([])
   const [mainImage, setMainImage] = useState("")
   const [additionalImages, setAdditionalImages] = useState<string[]>([])
@@ -1154,6 +1156,22 @@ export default function AddProductPage() {
                 <div className="space-y-8">
                   {/* Colors & Shades - New System */}
                   <div className="space-y-4">
+                    {/* Quick Color Selection */}
+                    <ColorQuickSelect
+                      value={lastQuickColor}
+                      onChange={(selection) => {
+                        setLastQuickColor(selection)
+                        // Auto-add to selected colors if not already there
+                        if (!selectedColors.some(c => c.shadeId === selection.shadeId)) {
+                          setSelectedColors([...selectedColors, selection])
+                        }
+                      }}
+                      label={t("اختر لوناً سريعاً للإضافة", "Quick Add a Color")}
+                      showLabel={true}
+                      maxColorsToShow={10}
+                    />
+
+                    {/* Full Color & Shade Search */}
                     <ColorSearchSelector
                       value={null}
                       onChange={() => {}} // Not used in multi-select mode
@@ -1161,7 +1179,7 @@ export default function AddProductPage() {
                       selectedColors={selectedColors}
                       onMultipleChange={setSelectedColors}
                       showLabel={true}
-                      label={t("الألوان والدرجات المتاحة", "Available Colors & Shades")}
+                      label={t("البحث والاختيار المتقدم", "Advanced Search & Selection")}
                       placeholder={t("ابحث عن لون أو درجة...", "Search for a color or shade...")}
                     />
                     {selectedColors.length > 0 && (

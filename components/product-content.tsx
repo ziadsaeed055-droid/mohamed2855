@@ -29,6 +29,9 @@ import { cn } from "@/lib/utils"
 import { SimilarProductsSection } from "@/components/similar-products-section"
 import { FullPageLoader } from "@/components/premium-loader"
 import { ColorSearchSelector } from "@/components/color-search-selector"
+import { ColorQuickSelect } from "@/components/color-quick-select"
+import { ColorPreviewImage } from "@/components/color-preview-image"
+import { StockAvailability } from "@/components/stock-availability"
 
 const productCache = new Map<string, { product: Product; timestamp: number }>()
 const CACHE_DURATION = 10 * 60 * 1000
@@ -296,9 +299,9 @@ export function ProductContent({ productId }: { productId: string }) {
   const price = product.discount > 0 ? product.discountedPrice : product.salePrice
   const allImages = [product.mainImage, ...(product.additionalImages || [])].filter(Boolean)
   
-  // Get the image for currently selected color (with smart fallback to main image with filter)
+  // Get the image for currently selected color
   const displayImage = getImageForColor(product, selectedColor)
-  const colorFilterStyle = getColorFilterStyle(selectedColor)
+  const hasSpecificColorImage = selectedColor ? !!product.colorImages?.[selectedColor.shadeId] : false
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -316,15 +319,13 @@ export function ProductContent({ productId }: { productId: string }) {
                 onMouseLeave={() => setIsZoomed(false)}
                 onMouseMove={handleMouseMove}
               >
-                <Image
-                  src={displayImage || "/placeholder.svg"}
-                  alt={name}
-                  fill
-                  className={cn("object-cover transition-all duration-300", isZoomed && "scale-150")}
-                  style={{
-                    ...(isZoomed ? { transformOrigin: `${mousePos.x}% ${mousePos.y}%` } : {}),
-                    ...colorFilterStyle
-                  }}
+                <ColorPreviewImage
+                  src={displayImage}
+                  alt={product.nameAr}
+                  colorSelection={selectedColor}
+                  hasSpecificColorImage={hasSpecificColorImage}
+                  className="w-full h-full"
+                  objectFit="cover"
                   priority
                 />
                 
@@ -518,17 +519,43 @@ export function ProductContent({ productId }: { productId: string }) {
 
               {/* Colors & Shades - New System */}
               {product.colors && product.colors.length > 0 && (
-                <ColorSearchSelector
-                  value={selectedColor}
-                  onChange={(selection) => {
-                    setSelectedColor(selection)
-                    if (selection) setSelectedColorId(selection.shadeId)
-                    setSelectedImage(0) // Reset to main image when color changes
-                  }}
-                  showLabel={true}
-                  label={`${t("اللون", "Color")}: ${selectedColor ? getColorDisplayName(selectedColor, language) : ""}`}
-                  compact={false}
-                />
+                <div className="space-y-4">
+                  {/* Quick Color Selection Bar */}
+                  <ColorQuickSelect
+                    value={selectedColor}
+                    onChange={(selection) => {
+                      setSelectedColor(selection)
+                      if (selection) setSelectedColorId(selection.shadeId)
+                      setSelectedImage(0)
+                    }}
+                    label={t("اختر لوناً سريعاً", "Quick Color Selection")}
+                    showLabel={true}
+                  />
+
+                  {/* Full Color & Shade Selector */}
+                  <ColorSearchSelector
+                    value={selectedColor}
+                    onChange={(selection) => {
+                      setSelectedColor(selection)
+                      if (selection) setSelectedColorId(selection.shadeId)
+                      setSelectedImage(0)
+                    }}
+                    showLabel={true}
+                    label={`${t("اختر درجة اللون", "Select Color Shade")}: ${selectedColor ? getColorDisplayName(selectedColor, language) : ""}`}
+                    compact={false}
+                  />
+
+                  {/* Stock Availability for Selected Color */}
+                  {selectedColor && product.colorSizeStock && (
+                    <StockAvailability
+                      stock={product.colorSizeStock.find(
+                        s => s.shadeId === selectedColor.shadeId && s.size === selectedSize
+                      )}
+                      size={selectedSize}
+                      showLabel={true}
+                    />
+                  )}
+                </div>
               )}
 
               {/* Sizes */}
