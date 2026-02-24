@@ -39,6 +39,7 @@ export function ColorSearchSelector({
   const [showDropdown, setShowDropdown] = useState(false)
   const [selectedColorGroup, setSelectedColorGroup] = useState<string | null>(null)
   const [selectedShade, setSelectedShade] = useState<string | null>(null)
+  const [tempShadeSelection, setTempShadeSelection] = useState<ColorVariant | null>(null) // For better UX
 
   // Filter colors based on search query
   const filteredColors = useMemo(() => {
@@ -57,7 +58,7 @@ export function ColorSearchSelector({
     setSelectedShade(null)
   }
 
-  const handleShadeSelect = (variant: ColorVariant) => {
+  const handleShadeSelect = (variant: ColorVariant, confirm = false) => {
     if (multiSelect && onMultipleChange) {
       const newLabel = language === "ar" ? variant.nameAr : variant.nameEn
       const newSelection: ColorSelection = {
@@ -71,12 +72,21 @@ export function ColorSearchSelector({
         onMultipleChange(selectedColors.filter(c => c.shadeId !== variant.id))
       } else {
         onMultipleChange([...selectedColors, newSelection])
+        // Auto-reset for better UX in multi-select
+        setTempShadeSelection(null)
       }
     } else {
-      const newLabel = language === "ar" ? variant.nameAr : variant.nameEn
+      // Single select mode
+      setTempShadeSelection(variant) // Highlight temporary selection
+    }
+  }
+
+  const handleConfirmShadeSelection = () => {
+    if (tempShadeSelection) {
+      const newLabel = language === "ar" ? tempShadeSelection.nameAr : tempShadeSelection.nameEn
       const newSelection: ColorSelection = {
-        colorId: variant.parentColorId,
-        shadeId: variant.id,
+        colorId: tempShadeSelection.parentColorId,
+        shadeId: tempShadeSelection.id,
         label: newLabel,
       }
       onChange(newSelection)
@@ -84,7 +94,13 @@ export function ColorSearchSelector({
       setSearchQuery("")
       setSelectedColorGroup(null)
       setSelectedShade(null)
+      setTempShadeSelection(null)
     }
+  }
+
+  const handleCancelShadeSelection = () => {
+    setSelectedColorGroup(null)
+    setTempShadeSelection(null)
   }
 
   const handleClear = (e: React.MouseEvent) => {
@@ -102,7 +118,8 @@ export function ColorSearchSelector({
     if (multiSelect) {
       return selectedColors.some(c => c.shadeId === variant.id)
     }
-    return value?.shadeId === variant.id
+    // In single-select, check both confirmed value and temporary selection
+    return value?.shadeId === variant.id || tempShadeSelection?.id === variant.id
   }
 
   const displayValue = multiSelect ? selectedColors : (value ? [value] : [])
@@ -225,7 +242,7 @@ export function ColorSearchSelector({
                       </div>
 
                       {/* Shades Grid */}
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-2 gap-3 mb-4">
                         {colorVariants.map((variant) => (
                           <motion.button
                             key={variant.id}
@@ -261,6 +278,34 @@ export function ColorSearchSelector({
                           </motion.button>
                         ))}
                       </div>
+
+                      {/* Action Buttons (Only in single-select mode) */}
+                      {!multiSelect && (
+                        <div className="pt-4 border-t border-border flex gap-3">
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={handleCancelShadeSelection}
+                            className="flex-1 px-4 py-2 rounded-lg border border-border hover:bg-muted/50 transition-colors font-medium text-sm"
+                          >
+                            {t("إلغاء", "Cancel")}
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={handleConfirmShadeSelection}
+                            disabled={!tempShadeSelection}
+                            className={cn(
+                              "flex-1 px-4 py-2 rounded-lg font-medium text-sm transition-colors",
+                              tempShadeSelection
+                                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                                : "bg-muted text-muted-foreground cursor-not-allowed"
+                            )}
+                          >
+                            {t("تأكيد", "Confirm")}
+                          </motion.button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

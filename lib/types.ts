@@ -747,3 +747,47 @@ export const LOOKBOOK_OCCASIONS = [
   { id: "beach", nameAr: "شاطئي", nameEn: "Beach", icon: "Waves", color: "cyan" },
   { id: "wedding", nameAr: "زفاف", nameEn: "Wedding", icon: "Heart", color: "rose" },
 ] as const
+
+// ================== BACKWARDS COMPATIBILITY HELPERS ==================
+
+/**
+ * Normalize color to shadeId (handles both new ColorSelection and legacy string formats)
+ */
+export function normalizeColorToShadeId(color: ColorSelection | string | null | undefined): string {
+  if (!color) return ""
+  if (typeof color === 'string') return color
+  if (color && typeof color === 'object' && 'shadeId' in color) {
+    return color.shadeId
+  }
+  return ""
+}
+
+/**
+ * Check if value is ColorSelection type
+ */
+export function isColorSelection(value: any): value is ColorSelection {
+  return (
+    value &&
+    typeof value === 'object' &&
+    'shadeId' in value &&
+    'colorId' in value &&
+    'label' in value
+  )
+}
+
+/**
+ * Convert ColorSelection to display string
+ */
+export function getColorSelectionDisplay(selection: ColorSelection | null, lang: "ar" | "en" = "ar"): string {
+  if (!selection) return ""
+  return selection.label || `${selection.colorId}-${selection.shadeId}`
+}
+
+/**
+ * Get hex color from ColorSelection
+ */
+export function getHexFromColorSelection(selection: ColorSelection | null): string {
+  if (!selection) return "#cccccc"
+  const variant = getColorVariantById(selection.shadeId)
+  return variant?.hex || "#cccccc"
+}
