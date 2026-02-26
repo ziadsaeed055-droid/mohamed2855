@@ -11,6 +11,7 @@ const categoryImages: Record<string, string> = {
   men: "https://images.unsplash.com/photo-1552062407-291ce3f93e7d?w=400&h=533&fit=crop&q=80",
   women: "https://images.unsplash.com/photo-1595777707802-21b287910b75?w=400&h=533&fit=crop&q=80",
   kids: "https://images.unsplash.com/photo-1519457073556-16cab08d6038?w=400&h=533&fit=crop&q=80",
+  youth: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=533&fit=crop&q=80",
 }
 
 export function CategoriesSection() {
