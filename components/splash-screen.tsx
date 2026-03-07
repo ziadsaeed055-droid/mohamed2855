@@ -71,15 +71,13 @@ export function SplashScreen({ onComplete, duration = 3000 }: SplashScreenProps)
           {/* Horse SVG with premium animation */}
           <motion.div
             animate={{
-              y: [0, -25, 0],
+              y: [0, -25],
             }}
             transition={{
-              duration: 2,
+              duration: 1,
               repeat: Infinity,
+              repeatType: "reverse",
               ease: "easeInOut",
-              type: "spring",
-              stiffness: 100,
-              damping: 10,
             }}
           >
             <svg

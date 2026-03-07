@@ -100,7 +100,6 @@ export function Header() {
               width={140}
               height={70}
               className="h-14 w-auto brightness-0 invert"
-              priority
               loading="eager"
             />
             <div className="w-10 h-10" />
@@ -150,7 +149,6 @@ export function Header() {
                       width={140} 
                       height={70} 
                       className="h-14 w-auto brightness-0 invert"
-                      priority
                       loading="eager"
                     />
                     <Button
@@ -295,7 +293,6 @@ export function Header() {
                   "h-14 w-auto object-contain transition-all duration-300",
                   !isScrolled && "brightness-0 invert",
                 )}
-                priority
                 loading="eager"
               />
             </Link>
@@ -353,9 +350,10 @@ export function Header() {
                   "text-sm font-medium tracking-wide transition-all hover:text-accent relative group",
                   isScrolled ? "text-foreground" : "text-primary-foreground",
                 )}
+                suppressHydrationWarning
               >
                 {t("تواصل معنا", "Contact Us")}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-accent transition-all group-hover:w-full" />
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-accent transition-all group-hover:w-full" suppressHydrationWarning />
               </Link>
               <Link
                 href="/dashboard"
