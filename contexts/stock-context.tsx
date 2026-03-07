@@ -1,51 +1,126 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState, useCallback } from "react"
+import { createContext, useContext, useState, useCallback, useEffect } from "react"
 import type { ColorSizeStock } from "@/lib/types"
+import { stockService } from "@/lib/services/stock-service"
 
 interface StockContextType {
   // Check stock availability
-  isStockAvailable: (productId: string, shadeId: string, size: string, quantity: number) => boolean
-  getAvailableQuantity: (productId: string, shadeId: string, size: string) => number
-  isLowStock: (productId: string, shadeId: string, size: string, threshold?: number) => boolean
+  isStockAvailable: (productId: string, shadeId: string, size: string, quantity: number) => Promise<boolean>
+  getAvailableQuantity: (productId: string, shadeId: string, size: string) => Promise<number>
+  isLowStock: (productId: string, shadeId: string, size: string, threshold?: number) => Promise<boolean>
   
   // Reserve and release stock
-  reserveStock: (productId: string, shadeId: string, size: string, quantity: number) => boolean
-  releaseStock: (productId: string, shadeId: string, size: string, quantity: number) => void
+  reserveStock: (productId: string, shadeId: string, size: string, quantity: number) => Promise<boolean>
+  releaseStock: (productId: string, shadeId: string, size: string, quantity: number) => Promise<void>
   
-  // Update stock after order
-  confirmStockDeduction: (productId: string, shadeId: string, size: string, quantity: number) => boolean
-  
-  // Get stock details
-  getProductStock: (productId: string) => ColorSizeStock[] | undefined
-  getStockByShadeAndSize: (productId: string, shadeId: string, size: string) => ColorSizeStock | undefined
+  // Update stock
+  updateStock: (productId: string, stock: ColorSizeStock[]) => Promise<void>
+  getProductStock: (productId: string) => Promise<ColorSizeStock[]>
+  getLowStockItems: (threshold?: number) => Promise<any[]>
 }
 
 const StockContext = createContext<StockContextType | undefined>(undefined)
 
 export function StockProvider({ children }: { children: React.ReactNode }) {
-  // Stock data would normally come from Firebase, but here we use local state for context
-  
-  const isStockAvailable = useCallback((productId: string, shadeId: string, size: string, quantity: number) => {
-    // This will be called from product-content when adding to cart
-    // Firebase will be the source of truth
-    return quantity > 0
+  const [isLoading, setIsLoading] = useState(false)
+
+  const isStockAvailable = useCallback(async (
+    productId: string,
+    shadeId: string,
+    size: string,
+    quantity: number
+  ): Promise<boolean> => {
+    try {
+      return await stockService.checkStockAvailability(productId, shadeId, size, quantity)
+    } catch (error) {
+      console.error("[StockProvider] Error checking availability:", error)
+      return false
+    }
   }, [])
 
-  const getAvailableQuantity = useCallback((productId: string, shadeId: string, size: string) => {
-    // Returns available quantity from Firebase
-    return 0 // Will be overridden by actual Firebase data
+  const getAvailableQuantity = useCallback(async (
+    productId: string,
+    shadeId: string,
+    size: string
+  ): Promise<number> => {
+    try {
+      const stock = await stockService.getProductStock(productId)
+      const item = stock.find(s => s.shadeId === shadeId && s.size === size)
+      return item?.quantity || 0
+    } catch (error) {
+      console.error("[StockProvider] Error getting quantity:", error)
+      return 0
+    }
   }, [])
 
-  const isLowStock = useCallback((productId: string, shadeId: string, size: string, threshold = 5) => {
-    // Check if stock is below threshold
-    return false // Will be overridden by actual check
+  const isLowStock = useCallback(async (
+    productId: string,
+    shadeId: string,
+    size: string,
+    threshold = 5
+  ): Promise<boolean> => {
+    try {
+      const quantity = await getAvailableQuantity(productId, shadeId, size)
+      return quantity <= threshold
+    } catch (error) {
+      console.error("[StockProvider] Error checking low stock:", error)
+      return false
+    }
+  }, [getAvailableQuantity])
+
+  const reserveStock = useCallback(async (
+    productId: string,
+    shadeId: string,
+    size: string,
+    quantity: number
+  ): Promise<boolean> => {
+    try {
+      return await stockService.reserveStock(productId, shadeId, size, quantity)
+    } catch (error) {
+      console.error("[StockProvider] Error reserving stock:", error)
+      return false
+    }
   }, [])
 
-  const reserveStock = useCallback((productId: string, shadeId: string, size: string, quantity: number) => {
-    // Reserve stock temporarily during checkout
-    return true
+  const releaseStock = useCallback(async (
+    productId: string,
+    shadeId: string,
+    size: string,
+    quantity: number
+  ): Promise<void> => {
+    try {
+      await stockService.releaseStock(productId, shadeId, size, quantity)
+    } catch (error) {
+      console.error("[StockProvider] Error releasing stock:", error)
+    }
+  }, [])
+
+  const updateStock = useCallback(async (productId: string, stock: ColorSizeStock[]): Promise<void> => {
+    try {
+      await stockService.updateProductStock(productId, stock)
+    } catch (error) {
+      console.error("[StockProvider] Error updating stock:", error)
+    }
+  }, [])
+
+  const getProductStock = useCallback(async (productId: string): Promise<ColorSizeStock[]> => {
+    try {
+      return await stockService.getProductStock(productId)
+    } catch (error) {
+      console.error("[StockProvider] Error fetching product stock:", error)
+      return []
+    }
+  }, [])
+
+  const getLowStockItems = useCallback(async (threshold?: number): Promise<any[]> => {
+    try {
+      return await stockService.getLowStockItems(threshold)
+    } catch (error) {
+      console.error("[StockProvider] Error fetching low stock items:", error)
+      return []
+    }
   }, [])
 
   const releaseStock = useCallback((productId: string, shadeId: string, size: string, quantity: number) => {
