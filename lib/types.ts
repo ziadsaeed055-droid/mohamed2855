@@ -75,8 +75,7 @@ export interface CartItem {
   productId: string
   product: Product
   quantity: number
-  selectedColor?: ColorSelection  // Updated: Now uses ColorSelection with shade info
-  selectedColorId?: string // Fallback for backward compatibility
+  selectedColor: string | ColorSelection  // Store as string (shadeId) for consistency
   selectedSize: string
   outfitSizes?: { [itemIndex: number]: string }
   customValues?: { [optionName: string]: string }

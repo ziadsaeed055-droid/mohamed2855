@@ -261,9 +261,9 @@ export function ProductContent({ productId }: { productId: string }) {
       toast({ title: t("اختر المقاس", "Select Size"), variant: "destructive" })
       return
     }
-    // Handle both new ColorSelection and legacy string format
-    addToCart(product, selectedColor?.shadeId || selectedColorId, selectedSize, quantity)
-    toast({ title: t("تمت الإضافة", "Added"), description: t("تمت إضافة المنتج", "Product added") })
+    // Pass ColorSelection object directly to cart
+    addToCart(product, selectedColor || selectedColorId, selectedSize, quantity)
+    toast({ title: t("تمت الإضافة", "Added"), description: t("تمت إضافة المنتج بنجاح", "Product added successfully") })
   }
 
   if (loading) return <FullPageLoader text={t("جاري التحميل...", "Loading...")} />

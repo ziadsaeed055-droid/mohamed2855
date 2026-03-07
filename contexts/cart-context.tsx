@@ -2,13 +2,13 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
-import type { CartItem, Product } from "@/lib/types"
+import type { CartItem, Product, ColorSelection } from "@/lib/types"
 
 interface CartContextType {
   items: CartItem[]
-  addToCart: (product: Product, color: string, size: string, quantity?: number) => void
-  removeFromCart: (productId: string, color: string, size: string) => void
-  updateQuantity: (productId: string, color: string, size: string, quantity: number) => void
+  addToCart: (product: Product, color: string | ColorSelection, size: string, quantity?: number) => void
+  removeFromCart: (productId: string, color: string | ColorSelection, size: string) => void
+  updateQuantity: (productId: string, color: string | ColorSelection, size: string, quantity: number) => void
   clearCart: () => void
   getTotal: () => number
   getItemCount: () => number
@@ -30,11 +30,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("sevenblue_cart", JSON.stringify(items))
   }, [items])
 
-  const addToCart = (product: Product, color: string, size: string, quantity = 1) => {
+  const addToCart = (product: Product, color: string | ColorSelection, size: string, quantity = 1) => {
+    const colorToStore = typeof color === 'string' ? color : color.shadeId
+    
     setItems((prev) => {
-      const existingIndex = prev.findIndex(
-        (item) => item.productId === product.id && item.selectedColor === color && item.selectedSize === size,
-      )
+      const existingIndex = prev.findIndex((item) => {
+        const itemColor = typeof item.selectedColor === 'string' ? item.selectedColor : item.selectedColor?.shadeId
+        return item.productId === product.id && itemColor === colorToStore && item.selectedSize === size
+      })
 
       if (existingIndex > -1) {
         const updated = [...prev]
@@ -48,32 +51,36 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           productId: product.id,
           product,
           quantity,
-          selectedColor: color,
+          selectedColor: colorToStore,
           selectedSize: size,
         },
       ]
     })
   }
 
-  const removeFromCart = (productId: string, color: string, size: string) => {
+  const removeFromCart = (productId: string, color: string | ColorSelection, size: string) => {
+    const colorToCompare = typeof color === 'string' ? color : color.shadeId
     setItems((prev) =>
-      prev.filter(
-        (item) => !(item.productId === productId && item.selectedColor === color && item.selectedSize === size),
-      ),
+      prev.filter((item) => {
+        const itemColor = typeof item.selectedColor === 'string' ? item.selectedColor : item.selectedColor?.shadeId
+        return !(item.productId === productId && itemColor === colorToCompare && item.selectedSize === size)
+      }),
     )
   }
 
-  const updateQuantity = (productId: string, color: string, size: string, quantity: number) => {
+  const updateQuantity = (productId: string, color: string | ColorSelection, size: string, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(productId, color, size)
       return
     }
+    const colorToCompare = typeof color === 'string' ? color : color.shadeId
     setItems((prev) =>
-      prev.map((item) =>
-        item.productId === productId && item.selectedColor === color && item.selectedSize === size
+      prev.map((item) => {
+        const itemColor = typeof item.selectedColor === 'string' ? item.selectedColor : item.selectedColor?.shadeId
+        return item.productId === productId && itemColor === colorToCompare && item.selectedSize === size
           ? { ...item, quantity }
-          : item,
-      ),
+          : item
+      }),
     )
   }
 
