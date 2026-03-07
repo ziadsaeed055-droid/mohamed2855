@@ -123,34 +123,15 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  const releaseStock = useCallback((productId: string, shadeId: string, size: string, quantity: number) => {
-    // Release reserved stock if checkout is cancelled
-  }, [])
-
-  const confirmStockDeduction = useCallback((productId: string, shadeId: string, size: string, quantity: number) => {
-    // Confirm final stock deduction after order is placed
-    return true
-  }, [])
-
-  const getProductStock = useCallback((productId: string) => {
-    // Get all stock data for a product
-    return undefined
-  }, [])
-
-  const getStockByShadeAndSize = useCallback((productId: string, shadeId: string, size: string) => {
-    // Get specific stock entry
-    return undefined
-  }, [])
-
   const value: StockContextType = {
     isStockAvailable,
     getAvailableQuantity,
     isLowStock,
     reserveStock,
     releaseStock,
-    confirmStockDeduction,
+    updateStock,
     getProductStock,
-    getStockByShadeAndSize,
+    getLowStockItems,
   }
 
   return <StockContext.Provider value={value}>{children}</StockContext.Provider>
