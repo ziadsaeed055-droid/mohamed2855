@@ -19,8 +19,8 @@ export function ProductCountBadge({ count, isLoading = false }: ProductCountBadg
       className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-full"
     >
       <motion.div
-        animate={isLoading ? { scale: [1, 1.2, 1] } : {}}
-        transition={{ duration: 1, repeat: isLoading ? Infinity : 0 }}
+        animate={isLoading ? { scale: [1, 1.2] } : {}}
+        transition={{ duration: 0.6, repeat: isLoading ? Infinity : 0, repeatType: "reverse" }}
         className="w-2 h-2 rounded-full bg-primary"
       />
       <span className="text-sm font-semibold text-foreground">

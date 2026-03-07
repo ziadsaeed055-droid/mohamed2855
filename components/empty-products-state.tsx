@@ -24,8 +24,8 @@ export function EmptyProductsState({
     >
       {/* Icon */}
       <motion.div
-        animate={{ y: [0, -10, 0] }}
-        transition={{ duration: 3, repeat: Infinity }}
+        animate={{ y: [0, -10] }}
+        transition={{ duration: 1.5, repeat: Infinity, repeatType: "reverse" }}
         className="mb-6"
       >
         <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
