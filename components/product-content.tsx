@@ -32,6 +32,8 @@ import { ColorSearchSelector } from "@/components/color-search-selector"
 import { ColorQuickSelect } from "@/components/color-quick-select"
 import { ColorPreviewImage } from "@/components/color-preview-image"
 import { StockAvailability } from "@/components/stock-availability"
+import { StockStatusDisplay } from "@/components/stock-status-display"
+import { isStockAvailable, getAvailableQuantity } from "@/lib/stock-utils"
 
 const productCache = new Map<string, { product: Product; timestamp: number }>()
 const CACHE_DURATION = 10 * 60 * 1000
@@ -261,6 +263,19 @@ export function ProductContent({ productId }: { productId: string }) {
       toast({ title: t("اختر المقاس", "Select Size"), variant: "destructive" })
       return
     }
+    
+    // Check stock availability
+    const shadeId = selectedColor?.shadeId || selectedColorId
+    if (!isStockAvailable(product, shadeId, selectedSize, quantity)) {
+      const available = getAvailableQuantity(product, shadeId, selectedSize)
+      toast({ 
+        title: t("مخزون غير كافي", "Insufficient Stock"), 
+        description: t(`المتاح فقط ${available} وحدة`, `Only ${available} units available`),
+        variant: "destructive" 
+      })
+      return
+    }
+    
     // Pass ColorSelection object directly to cart
     addToCart(product, selectedColor || selectedColorId, selectedSize, quantity)
     toast({ title: t("تمت الإضافة", "Added"), description: t("تمت إضافة المنتج بنجاح", "Product added successfully") })
@@ -577,6 +592,16 @@ export function ProductContent({ productId }: { productId: string }) {
                     ))}
                   </div>
                 </div>
+              )}
+
+              {/* Stock Status Display */}
+              {selectedColor && selectedSize && (
+                <StockStatusDisplay 
+                  product={product} 
+                  shadeId={selectedColor.shadeId} 
+                  size={selectedSize}
+                  className="border-blue-200 bg-blue-50"
+                />
               )}
 
               {/* Quantity */}

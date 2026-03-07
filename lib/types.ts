@@ -84,6 +84,51 @@ export interface CartItem {
   giftCardMessage?: string
 }
 
+// ==================== REVIEWS & RATINGS SYSTEM ====================
+export interface Review {
+  id: string
+  productId: string
+  userId: string
+  userName: string
+  userPhoto?: string
+  rating: number // 1-5
+  title: string
+  comment: string
+  images?: string[] // Photos from customer
+  verified: boolean // Has customer purchased this product?
+  helpful: number // How many found it helpful
+  unhelpful: number // How many found it unhelpful
+  response?: {
+    text: string
+    timestamp: Date
+  }
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface ProductRating {
+  productId: string
+  averageRating: number // 1-5
+  totalReviews: number
+  ratingDistribution: {
+    5: number // Count of 5-star reviews
+    4: number
+    3: number
+    2: number
+    1: number
+  }
+  recentReviews: Review[] // Latest reviews
+}
+
+// ==================== ORDER TRACKING SYSTEM ====================
+export interface ShippingUpdate {
+  status: "pending" | "processing" | "shipped" | "out_for_delivery" | "delivered" | "cancelled"
+  timestamp: Date
+  location?: string
+  notes?: string
+  notifiedUser?: boolean
+}
+
 export interface Order {
   id: string
   userId: string
@@ -91,11 +136,22 @@ export interface Order {
   userName: string
   userPhone: string
   userAddress: string
+  userCity?: string
+  userCountry?: string
   items: CartItem[]
   subtotal: number
   tax: number
+  shippingCost?: number
   total: number
-  status: "pending" | "processing" | "shipped" | "delivered"
+  paymentMethod?: "cash_on_delivery" | "online" | "bank_transfer"
+  paymentStatus?: "pending" | "paid" | "failed"
+  status: "pending" | "processing" | "shipped" | "out_for_delivery" | "delivered" | "cancelled" | "refunded"
+  shippingUpdates: ShippingUpdate[]
+  trackingNumber?: string
+  estimatedDeliveryDate?: Date
+  actualDeliveryDate?: Date
+  notes?: string
+  adminNotes?: string
   createdAt: Date
   updatedAt: Date
 }

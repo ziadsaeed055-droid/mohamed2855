@@ -54,6 +54,7 @@ import {
 import { cn } from "@/lib/utils"
 import { ColorSearchSelector } from "@/components/color-search-selector"
 import { ColorQuickSelect } from "@/components/color-quick-select"
+import { StockManagementDashboard } from "@/components/stock-management-dashboard"
 
 const productTypeIcons = {
   single: Package,
