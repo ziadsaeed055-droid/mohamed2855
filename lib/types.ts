@@ -216,7 +216,6 @@ export const CATEGORIES: Category[] = [
       { id: "women-tshirts", nameAr: "تيشيرتات", nameEn: "T-Shirts" },
       { id: "women-veil-scarf", nameAr: "حجاب وشال", nameEn: "Veil & Scarf" },
       { id: "women-scarves", nameAr: "طرح وأوشحة", nameEn: "Scarves & Wraps" },
-      { id: "women-bags", nameAr: "شنط وحقائب", nameEn: "Bags & Handbags" },
       { id: "women-blouses", nameAr: "بلوزات", nameEn: "Blouses" },
       { id: "women-jackets-coats", nameAr: "جاكيتات ومعاطف", nameEn: "Jackets & Coats" },
       { id: "women-sweatshirts", nameAr: "سويت شيرتات", nameEn: "Sweatshirts" },
