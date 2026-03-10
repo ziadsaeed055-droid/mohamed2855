@@ -17,10 +17,11 @@ export function CategoriesShowcase() {
   const [productCounts, setProductCounts] = useState<{ [key: string]: number }>({})
 
   // Category images mapping (keys match CATEGORIES ids)
+  // High-quality representative images for each category
   const categoryImages: { [key: string]: string } = {
-    men: "https://images.unsplash.com/photo-1552062407-291ce3f93e7d?w=600&h=400&fit=crop&q=80",
-    women: "https://images.unsplash.com/photo-1595777707802-21b287910b75?w=600&h=400&fit=crop&q=80",
-    kids: "https://images.unsplash.com/photo-1519457073556-16cab08d6038?w=600&h=400&fit=crop&q=80",
+    men: "https://images.unsplash.com/photo-1617137984896-3f06faf45c51?w=600&h=400&fit=crop&q=85", // Men's fashion
+    women: "https://images.unsplash.com/photo-1595777707802-21b287910b75?w=600&h=400&fit=crop&q=85", // Women's fashion - elegant look
+    kids: "https://images.unsplash.com/photo-1519457073556-16cab08d6038?w=600&h=400&fit=crop&q=85", // Kids' fashion
   }
 
   // Fetch product counts from Firebase

@@ -30,13 +30,41 @@ export function AIChatAssistant() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
+  const [showHint, setShowHint] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const hintTimerRef = useRef<NodeJS.Timeout | null>(null)
   const { t, language } = useLanguage()
   const { user } = useAuth()
 
   // Only show AI Chat if user is NOT authenticated
   // When authenticated, Support Chat (in dashboard) takes over
   const shouldShowAI = !user
+
+  // Show hint after 5 seconds, then repeat every 5 minutes
+  useEffect(() => {
+    if (!shouldShowAI || isOpen) return
+
+    // Initial hint after 5 seconds
+    const initialTimer = setTimeout(() => {
+      setShowHint(true)
+    }, 5000)
+
+    return () => clearTimeout(initialTimer)
+  }, [shouldShowAI, isOpen])
+
+  // Repeat hint every 5 minutes
+  useEffect(() => {
+    if (!shouldShowAI || isOpen || !showHint) return
+
+    hintTimerRef.current = setInterval(() => {
+      setShowHint(true)
+      setTimeout(() => setShowHint(false), 5000)
+    }, 300000) // 5 minutes
+
+    return () => {
+      if (hintTimerRef.current) clearInterval(hintTimerRef.current)
+    }
+  }, [shouldShowAI, isOpen, showHint])
 
   const quickActions: QuickAction[] = [
     { icon: ShoppingBag, label: "أريد التسوق", labelEn: "Start Shopping", action: "shopping" },
@@ -198,7 +226,7 @@ export function AIChatAssistant() {
 
   return (
     <>
-      {/* Floating Button */}
+      {/* Floating Button with Hint */}
       <AnimatePresence>
         {!isOpen && (
           <motion.div
@@ -206,15 +234,56 @@ export function AIChatAssistant() {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            className="fixed bottom-6 end-6 z-50"
+            className="fixed bottom-6 end-6 z-50 flex flex-col items-end gap-3"
           >
+            {/* Hint Text */}
+            <AnimatePresence>
+              {showHint && (
+                <motion.div
+                  initial={{ opacity: 0, x: 20, y: -10 }}
+                  animate={{ opacity: 1, x: 0, y: 0 }}
+                  exit={{ opacity: 0, x: 20, y: -10 }}
+                  transition={{ duration: 0.3 }}
+                  className="bg-white dark:bg-slate-900 rounded-2xl px-4 py-3 shadow-xl border border-blue-200 dark:border-blue-800 max-w-xs"
+                >
+                  <p className="text-sm font-medium text-slate-900 dark:text-white">
+                    {language === "ar" ? "💡 مساعدك الذكي جاهز - تحدث معي!" : "💡 Your AI Assistant Ready - Chat with me!"}
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* AI Cartoon Button */}
             <Button
-              onClick={() => setIsOpen(true)}
-              className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-2xl hover:shadow-blue-500/50 transition-all duration-300 group relative overflow-hidden"
+              onClick={() => {
+                setIsOpen(true)
+                setShowHint(false)
+              }}
+              className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 group relative overflow-hidden"
             >
               <div className="absolute inset-0 bg-white/20 rounded-full blur-xl group-hover:blur-2xl transition-all" />
-              <MessageCircle className="w-7 h-7 text-white group-hover:scale-110 transition-transform relative z-10" />
-              <div className="absolute -top-1 -end-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+              
+              {/* Cartoon AI Face SVG */}
+              <svg 
+                viewBox="0 0 100 100" 
+                className="w-8 h-8 relative z-10 text-white group-hover:scale-110 transition-transform"
+                fill="currentColor"
+              >
+                {/* Face circle */}
+                <circle cx="50" cy="50" r="45" fill="white" />
+                {/* Left eye */}
+                <circle cx="35" cy="40" r="6" fill="#3b82f6" />
+                <circle cx="37" cy="38" r="2" fill="white" />
+                {/* Right eye */}
+                <circle cx="65" cy="40" r="6" fill="#3b82f6" />
+                <circle cx="67" cy="38" r="2" fill="white" />
+                {/* Happy mouth */}
+                <path d="M 35 60 Q 50 70 65 60" stroke="#3b82f6" strokeWidth="3" fill="none" strokeLinecap="round" />
+                {/* Sparkle decoration */}
+                <circle cx="75" cy="25" r="3" fill="#fbbf24" />
+              </svg>
+              
+              <div className="absolute -top-1 -end-1 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center">
                 <Sparkles className="w-3 h-3 text-white animate-pulse" />
               </div>
             </Button>
