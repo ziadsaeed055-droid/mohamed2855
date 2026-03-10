@@ -46,12 +46,10 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
                   width: 800,
                   height: 800,
                   alt: title,
-                  type: "image/jpeg",
                 },
               ]
             : [],
-          type: "product",
-          locale: "ar_EG",
+          type: "article",
           url: `https://sevenblue.store/product/${id}`,
         },
         twitter: {

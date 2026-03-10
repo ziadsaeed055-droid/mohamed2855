@@ -58,7 +58,7 @@ export default function ShopPageContent() {
   const [selectedCategory, setSelectedCategory] = useState<string>(() => categoryParam || "all")
   const [selectedSubCategories, setSelectedSubCategories] = useState<string[]>(() => (subCategoryParam ? [subCategoryParam] : []))
   const [selectedColors, setSelectedColors] = useState<ColorSelection[]>([])
-  const [priceRange, setPriceRange] = useState([0, 10000])
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000])
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([])

@@ -47,10 +47,18 @@ export function AnimatedHeading({
     },
   }
 
-  const Component = motion[level as keyof typeof motion]
+  // Use motion.div and apply appropriate role based on level
+  const roleMap = {
+    h1: "heading",
+    h2: "heading",
+    h3: "heading",
+    h4: "heading",
+    h5: "heading",
+    h6: "heading",
+  }
 
   return (
-    <Component
+    <motion.div
       ref={ref}
       initial="hidden"
       animate={isInView ? "visible" : "hidden"}
@@ -61,8 +69,9 @@ export function AnimatedHeading({
         ease: "easeOut",
       }}
       className={className}
+      role={roleMap[level]}
     >
       {children}
-    </Component>
+    </motion.div>
   )
 }

@@ -1080,8 +1080,8 @@ export default function DashboardContent() {
                           </td>
                           <td className="p-4">
                             <div>
-                              <p className="font-medium">{order.customerName}</p>
-                              <p className="text-xs text-muted-foreground">{order.customerPhone}</p>
+                              <p className="font-medium">{order.userName}</p>
+                              <p className="text-xs text-muted-foreground">{order.userPhone}</p>
                             </div>
                           </td>
                           <td className="p-4">

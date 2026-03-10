@@ -24,12 +24,17 @@ export function AdminPerformanceTab({ products, orders }: AdminPerformanceTabPro
   const metrics = useMemo((): PerformanceMetrics => {
     // Calculate top performing products
     const productPerformance = products
-      .map(product => ({
-        name: language === "ar" ? product.nameAr : product.nameEn,
-        sales: product.sales || 0,
-        revenue: (product.sales || 0) * (product.discount > 0 ? product.discountedPrice : product.salePrice),
-        views: product.views || 0,
-      }))
+      .map(product => {
+        // Calculate sales as number of purchases (estimated from discounted sales)
+        const estimatedSales = product.discountedSales || 0
+        const finalPrice = product.discount > 0 ? product.discountedPrice : product.salePrice
+        return {
+          name: language === "ar" ? product.nameAr : product.nameEn,
+          sales: estimatedSales,
+          revenue: estimatedSales * finalPrice,
+          views: product.views || 0,
+        }
+      })
       .sort((a, b) => b.sales - a.sales)
 
     return {

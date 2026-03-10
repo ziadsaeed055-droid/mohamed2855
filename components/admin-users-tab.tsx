@@ -78,7 +78,7 @@ interface UserStats {
 export function AdminUsersTab() {
   const { t, language } = useLanguage()
   const { toast } = useToast()
-  const { openChatWithUser } = useChat()
+  // Chat functionality can be integrated if needed through context
 
   const [users, setUsers] = useState<UserData[]>([])
   const [loading, setLoading] = useState(true)

@@ -66,7 +66,7 @@ export default function WishlistPage() {
           }),
         )
 
-        setWishlistItems(items.filter(Boolean))
+        setWishlistItems(items.filter((item) => item !== null) as (Product & { wishlistId: string })[])
       } catch (error) {
         console.error("[v0] Error fetching wishlist:", error)
         toast({
@@ -101,13 +101,9 @@ export default function WishlistPage() {
   }
 
   const handleAddToCart = (product: Product) => {
-    addToCart({
-      productId: product.id,
-      product,
-      quantity: 1,
-      selectedColor: product.colors[0] || "",
-      selectedSize: product.sizes[0] || "",
-    })
+    const color = product.colors?.[0]?.shadeId || product.colors?.[0] || ""
+    const size = product.sizes?.[0] || ""
+    addToCart(product, color, size, 1)
     toast({
       title: t("تمت الإضافة", "Added"),
       description: t("تم إضافة المنتج إلى السلة", "Product added to cart"),
@@ -325,13 +321,9 @@ function RecommendedProducts() {
   }, [])
 
   const handleAddToCart = (product: Product) => {
-    addToCart({
-      productId: product.id,
-      product,
-      quantity: 1,
-      selectedColor: product.colors[0] || "",
-      selectedSize: product.sizes[0] || "",
-    })
+    const color = product.colors?.[0]?.shadeId || product.colors?.[0] || ""
+    const size = product.sizes?.[0] || ""
+    addToCart(product, color, size, 1)
     toast({
       title: t("تمت الإضافة", "Added"),
       description: t("تم إضافة المنتج إلى السلة", "Product added to cart"),
