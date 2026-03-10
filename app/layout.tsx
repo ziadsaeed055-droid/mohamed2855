@@ -14,6 +14,7 @@ import { WelcomeBonusModal } from "@/components/welcome-bonus-modal"
 import { ScrollToTop } from "@/components/scroll-to-top"
 import { RecentlyViewedProvider } from "@/contexts/recently-viewed-context"
 import { AIChatAssistant } from "@/components/ai-chat-assistant"
+import { SupportChat } from "@/components/support-chat"
 import { ConsoleWelcome } from "@/components/console-welcome"
 import { SplashScreenProvider } from "@/components/splash-screen-provider"
 // New System Providers
@@ -195,6 +196,7 @@ export default function RootLayout({
                               <WelcomeModal />
                               <WelcomeBonusModal />
                               <AIChatAssistant />
+                              <SupportChat />
                               <Toaster />
                             </ChatProvider>
                           </ReviewsProvider>

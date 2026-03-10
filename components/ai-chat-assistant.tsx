@@ -8,6 +8,7 @@ import { MessageCircle, X, Send, Sparkles, Loader2, ShoppingBag, Heart, Package,
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useLanguage } from "@/contexts/language-context"
+import { useAuth } from "@/contexts/auth-context"
 import { cn } from "@/lib/utils"
 
 interface Message {
@@ -31,6 +32,11 @@ export function AIChatAssistant() {
   const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { t, language } = useLanguage()
+  const { user } = useAuth()
+
+  // Only show AI Chat if user is NOT authenticated
+  // When authenticated, Support Chat (in dashboard) takes over
+  const shouldShowAI = !user
 
   const quickActions: QuickAction[] = [
     { icon: ShoppingBag, label: "أريد التسوق", labelEn: "Start Shopping", action: "shopping" },
@@ -146,7 +152,7 @@ export function AIChatAssistant() {
           : "Flexible return policy:\n\n✓ 14 days to return\n✓ Full refund\n✓ Free exchange\n✓ Product in original condition\n\nWant to know more?"
       } else if (lowercaseInput.includes("دفع") || lowercaseInput.includes("payment") || lowercaseInput.includes("طريقة")) {
         response = language === "ar"
-          ? "💳 طرق الدفع المتاحة:\n\n• الدفع عند الاستلام\n• بطاقات الائتمان\n• المحافظ الإلكترونية\n• التحويل البنكي\n\nجميع المعاملات آمنة ومشفرة 🔒"
+          ? "💳 طرق الدفع المتاحة:\n\n• الدفع عند الاستلام\n• بطاقات الائتمان\n• المحافظ الإلكترونية\n• ��لتحويل البنكي\n\nجميع المعاملات آمنة ومشفرة 🔒"
           : "💳 Available payment methods:\n\n• Cash on Delivery\n• Credit Cards\n• E-Wallets\n• Bank Transfer\n\nAll transactions are secure 🔒"
       } else if (lowercaseInput.includes("تواصل") || lowercaseInput.includes("contact") || lowercaseInput.includes("رقم") || lowercaseInput.includes("phone") || lowercaseInput.includes("واتس") || lowercaseInput.includes("whatsapp")) {
         response = language === "ar"
@@ -183,6 +189,11 @@ export function AIChatAssistant() {
       setMessages(prev => [...prev, aiMessage])
       setIsTyping(false)
     }, 1500)
+  }
+
+  // Don't render anything if user is authenticated
+  if (!shouldShowAI) {
+    return null
   }
 
   return (
