@@ -92,7 +92,7 @@ const redemptionStatusConfig = {
 export function AdminRewardsTab() {
   const { t, language } = useLanguage()
   const { toast } = useToast()
-  const { setActiveConversation, openChatWithUser } = useChat()
+  // Chat functionality available through context if needed
 
   const [activeSubTab, setActiveSubTab] = useState("rewards")
   const [rewards, setRewards] = useState<Reward[]>([])
@@ -263,7 +263,7 @@ export function AdminRewardsTab() {
       imageUrl: reward.imageUrl,
       pointsRequired: reward.pointsRequired,
       quantity: reward.quantity,
-      category: reward.category,
+      category: (reward.category === "discount" ? "discount" : "discount") as "discount",
       value: reward.value || 0,
       isActive: reward.isActive,
     })

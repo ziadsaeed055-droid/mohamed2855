@@ -31,7 +31,6 @@ export function BrandStorySection() {
       filter: "blur(0px)",
       transition: {
         duration: 0.8,
-        ease: [0.22, 1, 0.36, 1],
       },
     },
   }
@@ -44,7 +43,6 @@ export function BrandStorySection() {
       rotate: 0,
       transition: {
         duration: 1,
-        ease: [0.22, 1, 0.36, 1],
       },
     },
   }

@@ -26,7 +26,8 @@ const moods = [
     descEn: "Modern and comfortable look for everyday",
     icon: Shirt,
     color: "from-blue-500 to-cyan-500",
-    bgGradient: "from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20"
+    bgGradient: "from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20",
+    image: "https://images.unsplash.com/photo-1552062407-291ce3f93e7d?w=800&h=600&fit=crop&q=85"
   },
   {
     id: "formal",
@@ -36,7 +37,8 @@ const moods = [
     descEn: "Professional elegance for formal occasions",
     icon: Briefcase,
     color: "from-gray-700 to-gray-900",
-    bgGradient: "from-gray-50 to-slate-100 dark:from-gray-950/20 dark:to-slate-950/20"
+    bgGradient: "from-gray-50 to-slate-100 dark:from-gray-950/20 dark:to-slate-950/20",
+    image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=800&h=600&fit=crop&q=85"
   },
   {
     id: "party",
@@ -46,7 +48,8 @@ const moods = [
     descEn: "Bold and distinctive look for parties",
     icon: PartyPopper,
     color: "from-purple-500 to-pink-500",
-    bgGradient: "from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20"
+    bgGradient: "from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20",
+    image: "https://images.unsplash.com/photo-1609929211133-cf81fcbcf5ce?w=800&h=600&fit=crop&q=85"
   },
   {
     id: "sport",
@@ -56,7 +59,8 @@ const moods = [
     descEn: "Active and flexible sportswear",
     icon: Dumbbell,
     color: "from-emerald-500 to-green-500",
-    bgGradient: "from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20"
+    bgGradient: "from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20",
+    image: "https://images.unsplash.com/photo-1556821552-23d516bb6137?w=800&h=600&fit=crop&q=85"
   }
 ]
 

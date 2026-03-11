@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { collection, addDoc, serverTimestamp, getDocs, query, orderBy } from "firebase/firestore"
+import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, where } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,6 +25,7 @@ import {
   type ProductType,
   type OutfitItem,
   type Product,
+  type ColorSelection,
 } from "@/lib/types"
 import {
   ArrowRight,
@@ -51,6 +52,9 @@ import {
   Loader2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { ColorSearchSelector } from "@/components/color-search-selector"
+import { ColorQuickSelect } from "@/components/color-quick-select"
+import { StockManagementDashboard } from "@/components/stock-management-dashboard"
 
 const productTypeIcons = {
   single: Package,
@@ -99,7 +103,8 @@ export default function AddProductPage() {
     isFeatured: false,
   })
 
-  const [selectedColors, setSelectedColors] = useState<string[]>([])
+  const [selectedColors, setSelectedColors] = useState<ColorSelection[]>([])
+  const [lastQuickColor, setLastQuickColor] = useState<ColorSelection | null>(null)
   const [selectedSizes, setSelectedSizes] = useState<string[]>([])
   const [mainImage, setMainImage] = useState("")
   const [additionalImages, setAdditionalImages] = useState<string[]>([])
@@ -424,7 +429,7 @@ export default function AddProductPage() {
     if (sectionIndex === getSectionIndex("colors")) {
       // Colors & Sizes section
       if (selectedColors.length === 0) {
-        errors.push(t("يجب اختيار لون واحد على الأقل", "At least one color is required"))
+        errors.push(t("يجب اختيار لون مع درجة واحدة على الأقل", "At least one color with shade is required"))
       }
       if (selectedSizes.length === 0) {
         errors.push(t("يجب اختيار مقاس واحد على الأقل", "At least one size is required"))
@@ -458,7 +463,7 @@ export default function AddProductPage() {
       if (formData.discount) {
         const discountNum = Number.parseFloat(formData.discount)
         if (discountNum < 0 || discountNum > 100) {
-          errors.push(t("الخصم يجب أن يكون بين 0 و 100", "Discount must be between 0 and 100"))
+          errors.push(t("الخصم يج�� أن يكون بين 0 و 100", "Discount must be between 0 and 100"))
         }
       }
 
@@ -1150,38 +1155,34 @@ export default function AddProductPage() {
                 </div>
 
                 <div className="space-y-8">
-                  {/* Colors */}
+                  {/* Colors & Shades - New System */}
                   <div className="space-y-4">
-                    <Label className="text-base font-semibold">{t("الألوان المتاحة", "Available Colors")}</Label>
-                    <div className="flex flex-wrap gap-3">
-                      {COLORS.map((color) => (
-                        <button
-                          key={color.id}
-                          type="button"
-                          onClick={() => {
-                            if (selectedColors.includes(color.hex)) {
-                              setSelectedColors(selectedColors.filter((c) => c !== color.hex))
-                            } else {
-                              setSelectedColors([...selectedColors, color.hex])
-                            }
-                          }}
-                          className={cn(
-                            "w-12 h-12 rounded-xl border-2 transition-all duration-300 flex items-center justify-center hover:scale-110",
-                            selectedColors.includes(color.hex)
-                              ? "border-primary ring-4 ring-primary/20 scale-110"
-                              : "border-transparent hover:border-muted-foreground/30",
-                          )}
-                          style={{ backgroundColor: color.hex }}
-                          title={t(color.nameAr, color.nameEn)}
-                        >
-                          {selectedColors.includes(color.hex) && (
-                            <Check
-                              className={cn("w-5 h-5", color.hex === "#FFFFFF" ? "text-foreground" : "text-white")}
-                            />
-                          )}
-                        </button>
-                      ))}
-                    </div>
+                    {/* Quick Color Selection */}
+                    <ColorQuickSelect
+                      value={lastQuickColor}
+                      onChange={(selection) => {
+                        setLastQuickColor(selection)
+                        // Auto-add to selected colors if not already there
+                        if (!selectedColors.some(c => c.shadeId === selection.shadeId)) {
+                          setSelectedColors([...selectedColors, selection])
+                        }
+                      }}
+                      label={t("اختر لوناً سريعاً للإضافة", "Quick Add a Color")}
+                      showLabel={true}
+                      maxColorsToShow={10}
+                    />
+
+                    {/* Full Color & Shade Search */}
+                    <ColorSearchSelector
+                      value={null}
+                      onChange={() => {}} // Not used in multi-select mode
+                      multiSelect={true}
+                      selectedColors={selectedColors}
+                      onMultipleChange={setSelectedColors}
+                      showLabel={true}
+                      label={t("البحث والاختيار المتقدم", "Advanced Search & Selection")}
+                      placeholder={t("ابحث عن لون أو درجة...", "Search for a color or shade...")}
+                    />
                     {selectedColors.length > 0 && (
                       <p className="text-sm text-muted-foreground">
                         {t("الألوان المختارة:", "Selected colors:")} {selectedColors.length}
@@ -1249,7 +1250,7 @@ export default function AddProductPage() {
                   </div>
                   <div>
                     <h2 className="text-lg font-bold text-foreground">
-                      {productType === "outfit" ? t("صور الطقم", "Outfit Images") : t("صور المنتج", "Product Images")}
+                      {productType === "outfit" ? t("صور الطقم", "Outfit Images") : t("صور المنت����", "Product Images")}
                     </h2>
                     <p className="text-sm text-muted-foreground">
                       {productType === "outfit"
@@ -1356,51 +1357,74 @@ export default function AddProductPage() {
                       </div>
 
                       <div className="grid gap-4">
-                        {selectedColors.map((colorHex) => {
-                          const color = COLORS.find((c) => c.hex === colorHex)
+                        {selectedColors.map((colorSelection) => {
+                          const hex = COLORS.find(c => c.id === colorSelection.colorId)?.variants.find(v => v.id === colorSelection.shadeId)?.hex
+                          
                           return (
-                            <div key={colorHex} className="flex items-center gap-4 p-4 bg-muted/50 rounded-xl">
-                              <div
-                                className="w-12 h-12 rounded-lg border-2 flex-shrink-0"
-                                style={{ backgroundColor: colorHex }}
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium">{t(color?.nameAr || "لون", color?.nameEn || "Color")}</p>
-                                {colorImages[colorHex] ? (
-                                  <div className="flex items-center gap-3 mt-2">
-                                    <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
-                                      <Image src={colorImages[colorHex]} alt={`${colorHex} image`} fill className="object-cover" />
-                                    </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => setColorImages({ ...colorImages, [colorHex]: "" })}
-                                      className="text-sm px-3 py-1 bg-destructive/10 text-destructive hover:bg-destructive/20 rounded-lg transition-colors"
-                                    >
-                                      {t("إزالة", "Remove")}
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <label className="flex items-center justify-center gap-2 mt-2 px-3 py-2 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-all">
-                                    <Upload className="w-4 h-4" />
-                                    <span className="text-xs">{t("رفع صورة", "Upload")}</span>
-                                    <input
-                                      type="file"
-                                      accept="image/*"
-                                      className="hidden"
-                                      onChange={(e) => {
-                                        const file = e.target.files?.[0]
-                                        if (!file) return
-                                        const reader = new FileReader()
-                                        reader.onloadend = () => {
-                                          const result = reader.result as string
-                                          setColorImages({ ...colorImages, [colorHex]: result })
-                                        }
-                                        reader.readAsDataURL(file)
-                                      }}
-                                    />
-                                  </label>
-                                )}
+                            <div key={colorSelection.shadeId} className="flex flex-col p-4 bg-muted/50 rounded-xl border border-border">
+                              {/* Color Header with Name and Preview */}
+                              <div className="flex items-center gap-3 mb-4">
+                                <div
+                                  className="w-16 h-16 rounded-lg border-2 border-border shadow-sm flex-shrink-0"
+                                  style={{ backgroundColor: hex || '#cccccc' }}
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-bold text-foreground">
+                                    {colorSelection.label}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {colorSelection.shadeId}
+                                  </p>
+                                </div>
                               </div>
+
+                              {/* Image Upload Section */}
+                              {colorImages[colorSelection.shadeId] ? (
+                                <div className="relative w-full h-48 rounded-lg overflow-hidden border-2 border-border">
+                                  <Image
+                                    src={colorImages[colorSelection.shadeId]}
+                                    alt={colorSelection.label}
+                                    fill
+                                    className="object-cover"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newColorImages = { ...colorImages }
+                                      delete newColorImages[colorSelection.shadeId]
+                                      setColorImages(newColorImages)
+                                    }}
+                                    className="absolute top-2 end-2 w-8 h-8 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-lg"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <label className="flex flex-col items-center justify-center w-full h-48 rounded-lg border-2 border-dashed border-primary/50 hover:border-primary hover:bg-primary/5 cursor-pointer transition-all group">
+                                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <Upload className="w-8 h-8 text-primary/60 group-hover:text-primary mb-2" />
+                                    <p className="text-sm font-medium text-primary">{t("اضغط لرفع صورة اللون", "Click to upload color image")}</p>
+                                    <p className="text-xs text-muted-foreground">{t(colorSelection.label, colorSelection.label)}</p>
+                                  </div>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0]
+                                      if (!file) return
+                                      const reader = new FileReader()
+                                      reader.onloadend = () => {
+                                        setColorImages({
+                                          ...colorImages,
+                                          [colorSelection.shadeId]: reader.result as string
+                                        })
+                                      }
+                                      reader.readAsDataURL(file)
+                                    }}
+                                  />
+                                </label>
+                              )}
                             </div>
                           )
                         })}

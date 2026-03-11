@@ -17,8 +17,8 @@ import { useCart } from "@/contexts/cart-context"
 import { useAuth } from "@/contexts/auth-context"
 import { useRecentlyViewed } from "@/contexts/recently-viewed-context"
 import { useToast } from "@/hooks/use-toast"
-import type { Product } from "@/lib/types"
-import { COLORS } from "@/lib/types"
+import type { Product, ColorSelection } from "@/lib/types"
+import { COLORS, getColorVariantById } from "@/lib/types"
 import {
   Minus, Plus, Heart, Share2, Truck, Shield, RotateCcw,
   ShoppingBag, ChevronLeft, ChevronRight, Star, Check,
@@ -28,30 +28,39 @@ import {
 import { cn } from "@/lib/utils"
 import { SimilarProductsSection } from "@/components/similar-products-section"
 import { FullPageLoader } from "@/components/premium-loader"
+import { ColorSearchSelector } from "@/components/color-search-selector"
+import { ColorQuickSelect } from "@/components/color-quick-select"
+import { ColorPreviewImage } from "@/components/color-preview-image"
+import { StockAvailability } from "@/components/stock-availability"
+import { StockStatusDisplay } from "@/components/stock-status-display"
+import { isStockAvailable, getAvailableQuantity } from "@/lib/stock-utils"
 
 const productCache = new Map<string, { product: Product; timestamp: number }>()
 const CACHE_DURATION = 10 * 60 * 1000
 
-function getColorDisplayName(color: string, lang: string = "ar"): string {
-  const colorData = COLORS.find(c => c.hex.toLowerCase() === color.toLowerCase() || c.id === color)
-  if (!colorData) return color
-  return lang === "ar" ? colorData.nameAr : colorData.nameEn
+function getColorDisplayName(color: ColorSelection | null, lang: string = "ar"): string {
+  if (!color) return ""
+  return color.label || color.colorId
 }
 
-function getImageForColor(product: Product, selectedColor: string): string {
-  // If product has specific image for this color, use it
-  if (product.colorImages?.[selectedColor]) {
-    return product.colorImages[selectedColor]
+function getImageForColor(product: Product, selectedColor: ColorSelection | null): string {
+  if (!selectedColor) return product.mainImage
+  
+  // If product has specific image for this shade, use it
+  if (product.colorImages?.[selectedColor.shadeId]) {
+    return product.colorImages[selectedColor.shadeId]
   }
   
   // Otherwise use main image with smart color filter
   return product.mainImage
 }
 
-function getColorFilterStyle(selectedColor: string): React.CSSProperties {
-  // Find the color from COLORS array to get hex value
-  const colorData = COLORS.find(c => c.id === selectedColor || c.hex.toLowerCase() === selectedColor.toLowerCase())
-  const hexColor = colorData?.hex.toUpperCase() || "#CCCCCC"
+function getColorFilterStyle(selectedColor: ColorSelection | null): React.CSSProperties {
+  if (!selectedColor) return {}
+  
+  // Find the variant to get hex value
+  const variant = getColorVariantById(selectedColor.shadeId)
+  const hexColor = variant?.hex.toUpperCase() || "#CCCCCC"
   
   // Map color hex to hue rotation degrees for intelligent color shifting
   const colorToHueMap: { [key: string]: number } = {
@@ -108,7 +117,8 @@ export function ProductContent({ productId }: { productId: string }) {
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [selectedColor, setSelectedColor] = useState<string>("")
+  const [selectedColor, setSelectedColor] = useState<ColorSelection | null>(null)
+  const [selectedColorId, setSelectedColorId] = useState<string>("") // For backward compatibility
   const [selectedSize, setSelectedSize] = useState<string>("")
   const [quantity, setQuantity] = useState(1)
   const [selectedImage, setSelectedImage] = useState(0)
@@ -135,7 +145,10 @@ export function ProductContent({ productId }: { productId: string }) {
         if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
           console.log("[v0] ⚡ Using cached product data")
           setProduct(cached.product)
-          if (cached.product.colors?.length > 0) setSelectedColor(cached.product.colors[0])
+          if (cached.product.colors?.length > 0) {
+            setSelectedColor(cached.product.colors[0])
+            setSelectedColorId(cached.product.colors[0].shadeId)
+          }
           if (cached.product.sizes?.length > 0) setSelectedSize(cached.product.sizes[0])
           return
         }
@@ -161,7 +174,10 @@ export function ProductContent({ productId }: { productId: string }) {
           // Add to recently viewed
           addToRecentlyViewed(productData)
           
-          if (productData.colors?.length > 0) setSelectedColor(productData.colors[0])
+          if (productData.colors?.length > 0) {
+            setSelectedColor(productData.colors[0])
+            setSelectedColorId(productData.colors[0].shadeId)
+          }
           if (productData.sizes?.length > 0) setSelectedSize(productData.sizes[0])
 
           // Try to update view count, but don't fail if permissions are insufficient
@@ -240,15 +256,29 @@ export function ProductContent({ productId }: { productId: string }) {
   const handleAddToCart = () => {
     if (!product) return
     if (product.colors?.length > 0 && !selectedColor) {
-      toast({ title: t("اختر اللون", "Select Color"), variant: "destructive" })
+      toast({ title: t("اختر اللون والدرجة", "Select Color & Shade"), variant: "destructive" })
       return
     }
     if (product.sizes?.length > 0 && !selectedSize) {
       toast({ title: t("اختر المقاس", "Select Size"), variant: "destructive" })
       return
     }
-    addToCart(product, selectedColor, selectedSize, quantity)
-    toast({ title: t("تمت الإضافة", "Added"), description: t("تمت إضافة المنتج", "Product added") })
+    
+    // Check stock availability
+    const shadeId = selectedColor?.shadeId || selectedColorId
+    if (!isStockAvailable(product, shadeId, selectedSize, quantity)) {
+      const available = getAvailableQuantity(product, shadeId, selectedSize)
+      toast({ 
+        title: t("مخزون غير كافي", "Insufficient Stock"), 
+        description: t(`المتاح فقط ${available} وحدة`, `Only ${available} units available`),
+        variant: "destructive" 
+      })
+      return
+    }
+    
+    // Pass ColorSelection object directly to cart
+    addToCart(product, selectedColor || selectedColorId, selectedSize, quantity)
+    toast({ title: t("تمت الإضافة", "Added"), description: t("تمت إضافة المنتج بنجاح", "Product added successfully") })
   }
 
   if (loading) return <FullPageLoader text={t("جاري التحميل...", "Loading...")} />
@@ -284,9 +314,9 @@ export function ProductContent({ productId }: { productId: string }) {
   const price = product.discount > 0 ? product.discountedPrice : product.salePrice
   const allImages = [product.mainImage, ...(product.additionalImages || [])].filter(Boolean)
   
-  // Get the image for currently selected color (with smart fallback to main image with filter)
-  const displayImage = selectedColor ? getImageForColor(product, selectedColor) : product.mainImage
-  const colorFilterStyle = selectedColor ? getColorFilterStyle(selectedColor) : {}
+  // Get the image for currently selected color
+  const displayImage = getImageForColor(product, selectedColor)
+  const hasSpecificColorImage = selectedColor ? !!product.colorImages?.[selectedColor.shadeId] : false
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -304,15 +334,13 @@ export function ProductContent({ productId }: { productId: string }) {
                 onMouseLeave={() => setIsZoomed(false)}
                 onMouseMove={handleMouseMove}
               >
-                <Image
-                  src={displayImage || "/placeholder.svg"}
-                  alt={name}
-                  fill
-                  className={cn("object-cover transition-all duration-300", isZoomed && "scale-150")}
-                  style={{
-                    ...(isZoomed ? { transformOrigin: `${mousePos.x}% ${mousePos.y}%` } : {}),
-                    ...colorFilterStyle
-                  }}
+                <ColorPreviewImage
+                  src={displayImage}
+                  alt={product.nameAr}
+                  colorSelection={selectedColor}
+                  hasSpecificColorImage={hasSpecificColorImage}
+                  className="w-full h-full"
+                  objectFit="cover"
                   priority
                 />
                 
@@ -504,42 +532,44 @@ export function ProductContent({ productId }: { productId: string }) {
                 </p>
               )}
 
-              {/* Colors */}
+              {/* Colors & Shades - New System */}
               {product.colors && product.colors.length > 0 && (
-                <div className={cn("space-y-3", language === "ar" && "text-right")}>
-                  <label className="text-sm font-semibold text-slate-700">{t("اللون", "Color")}: <span className="text-[#0d3b66]">{getColorDisplayName(selectedColor, language)}</span></label>
-                  <div className="flex flex-wrap gap-3">
-                    {product.colors.map((color) => {
-                      // Support both hex colors (stored by add-product) and color IDs (legacy)
-                      const isHexColor = color.startsWith("#")
-                      const colorData = isHexColor 
-                        ? COLORS.find(c => c.hex.toLowerCase() === color.toLowerCase())
-                        : COLORS.find(c => c.id === color)
-                      const hex = isHexColor ? color : (colorData?.hex || "#cccccc")
-                      const isLight = hex ? 
-                        parseInt(hex.slice(1,3), 16) + parseInt(hex.slice(3,5), 16) + parseInt(hex.slice(5,7), 16) > 600 : true
-                      
-                      return (
-                        <button
-                          key={color}
-                          onClick={() => {
-                            setSelectedColor(color)
-                            setSelectedImage(0) // Reset to main image when color changes
-                          }}
-                          className={cn(
-                            "relative w-14 h-14 rounded-full border-3 transition-all shadow-md hover:scale-105",
-                            selectedColor === color ? "border-[#0d3b66] ring-4 ring-[#0d3b66]/20 scale-110" : "border-slate-200"
-                          )}
-                          style={{ backgroundColor: hex }}
-                          title={t(colorData?.nameAr || color, colorData?.nameEn || color)}
-                        >
-                          {selectedColor === color && (
-                            <Check className={cn("w-6 h-6 absolute inset-0 m-auto", isLight ? "text-slate-800" : "text-white")} />
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
+                <div className="space-y-4">
+                  {/* Quick Color Selection Bar */}
+                  <ColorQuickSelect
+                    value={selectedColor}
+                    onChange={(selection) => {
+                      setSelectedColor(selection)
+                      if (selection) setSelectedColorId(selection.shadeId)
+                      setSelectedImage(0)
+                    }}
+                    label={t("اختر لوناً سريعاً", "Quick Color Selection")}
+                    showLabel={true}
+                  />
+
+                  {/* Full Color & Shade Selector */}
+                  <ColorSearchSelector
+                    value={selectedColor}
+                    onChange={(selection) => {
+                      setSelectedColor(selection)
+                      if (selection) setSelectedColorId(selection.shadeId)
+                      setSelectedImage(0)
+                    }}
+                    showLabel={true}
+                    label={`${t("اختر درجة اللون", "Select Color Shade")}: ${selectedColor ? getColorDisplayName(selectedColor, language) : ""}`}
+                    compact={false}
+                  />
+
+                  {/* Stock Availability for Selected Color */}
+                  {selectedColor && product.colorSizeStock && (
+                    <StockAvailability
+                      stock={product.colorSizeStock.find(
+                        s => s.shadeId === selectedColor.shadeId && s.size === selectedSize
+                      )}
+                      size={selectedSize}
+                      showLabel={true}
+                    />
+                  )}
                 </div>
               )}
 
@@ -562,6 +592,16 @@ export function ProductContent({ productId }: { productId: string }) {
                     ))}
                   </div>
                 </div>
+              )}
+
+              {/* Stock Status Display */}
+              {selectedColor && selectedSize && (
+                <StockStatusDisplay 
+                  product={product} 
+                  shadeId={selectedColor.shadeId} 
+                  size={selectedSize}
+                  className="border-blue-200 bg-blue-50"
+                />
               )}
 
               {/* Quantity */}

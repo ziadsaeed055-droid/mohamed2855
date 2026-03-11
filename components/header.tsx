@@ -74,6 +74,7 @@ export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const { getItemCount } = useCart()
   const { user } = useAuth()
   const { t, language, setLanguage } = useLanguage()
@@ -81,10 +82,32 @@ export function Header() {
   const { recentlyViewed } = useRecentlyViewed()
 
   useEffect(() => {
+    setMounted(true)
     const handleScroll = () => setIsScrolled(window.scrollY > 50)
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
+
+  if (!mounted) {
+    return (
+      <header className="fixed top-0 left-0 right-0 z-50 bg-transparent py-5">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between">
+            <div className="w-10 h-10" />
+            <Image
+              src="/images/logo.png"
+              alt="Seven Blue"
+              width={140}
+              height={70}
+              className="h-14 w-auto brightness-0 invert"
+              loading="eager"
+            />
+            <div className="w-10 h-10" />
+          </div>
+        </div>
+      </header>
+    )
+  }
 
   return (
     <>
@@ -93,6 +116,7 @@ export function Header() {
           "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
           isScrolled ? "bg-card/95 backdrop-blur-xl shadow-lg py-3" : "bg-transparent py-5",
         )}
+        suppressHydrationWarning
       >
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
@@ -124,7 +148,8 @@ export function Header() {
                       alt="Seven Blue" 
                       width={140} 
                       height={70} 
-                      className="h-14 w-auto brightness-0 invert" 
+                      className="h-14 w-auto brightness-0 invert"
+                      loading="eager"
                     />
                     <Button
                       variant="ghost"
@@ -268,6 +293,7 @@ export function Header() {
                   "h-14 w-auto object-contain transition-all duration-300",
                   !isScrolled && "brightness-0 invert",
                 )}
+                loading="eager"
               />
             </Link>
 
@@ -324,9 +350,10 @@ export function Header() {
                   "text-sm font-medium tracking-wide transition-all hover:text-accent relative group",
                   isScrolled ? "text-foreground" : "text-primary-foreground",
                 )}
+                suppressHydrationWarning
               >
                 {t("تواصل معنا", "Contact Us")}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-accent transition-all group-hover:w-full" />
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-accent transition-all group-hover:w-full" suppressHydrationWarning />
               </Link>
               <Link
                 href="/dashboard"

@@ -78,7 +78,10 @@ export function ProductCard({ product, className, style, viewMode = "grid" }: Pr
     }
 
     if (product.colors?.length > 0 && product.sizes?.length > 0) {
-      addToCart(product, product.colors[0], product.sizes[0])
+      // Pass the first color's shadeId string to cart
+      const firstColor = product.colors[0]
+      const colorToPass = typeof firstColor === 'string' ? firstColor : firstColor.shadeId
+      addToCart(product, colorToPass, product.sizes[0])
       toast({
         title: t("تمت الإضافة", "Added to Cart"),
         description:

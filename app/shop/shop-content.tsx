@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { useLanguage } from "@/contexts/language-context"
-import { CATEGORIES, COLORS, type Product } from "@/lib/types"
+import { CATEGORIES, COLORS, type Product, type ColorSelection } from "@/lib/types"
 import {
   SlidersHorizontal,
   LayoutGrid,
@@ -43,6 +43,7 @@ import { QuickFilters } from "@/components/quick-filters"
 import { ViewModeToggle } from "@/components/view-mode-toggle"
 import { MobileFilterButton } from "@/components/mobile-filter-button"
 import { PriceDisplay } from "@/components/price-display"
+import { ColorSearchSelector } from "@/components/color-search-selector"
 
 export default function ShopPageContent() {
   const searchParams = useSearchParams()
@@ -56,8 +57,8 @@ export default function ShopPageContent() {
   const [sortBy, setSortBy] = useState("newest")
   const [selectedCategory, setSelectedCategory] = useState<string>(() => categoryParam || "all")
   const [selectedSubCategories, setSelectedSubCategories] = useState<string[]>(() => (subCategoryParam ? [subCategoryParam] : []))
-  const [selectedColors, setSelectedColors] = useState<string[]>([])
-  const [priceRange, setPriceRange] = useState([0, 10000])
+  const [selectedColors, setSelectedColors] = useState<ColorSelection[]>([])
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000])
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
@@ -101,10 +102,16 @@ export default function ShopPageContent() {
         productsData = productsData.filter((p) => p.isFeatured === true)
       }
 
-      // Color filter
+      // Color filter - support new ColorSelection format
       if (selectedColors.length > 0) {
         productsData = productsData.filter((p) => {
-          return p.colors?.some((c) => selectedColors.includes(c)) || false
+          return p.colors?.some((color) => {
+            // Support both new ColorSelection format and legacy string format
+            if (typeof color === 'string') {
+              return selectedColors.some(sc => sc.shadeId === color || sc.colorId === color)
+            }
+            return selectedColors.some(sc => sc.shadeId === color.shadeId || sc.colorId === color.colorId)
+          }) || false
         })
       }
 
@@ -292,38 +299,16 @@ export default function ShopPageContent() {
       </div>
 
       <div className="space-y-3">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-          <Palette className="w-3.5 h-3.5" />
-          {t("الألوان", "Colors")}
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {COLORS.map((color) => (
-            <button
-              key={color.id}
-              onClick={() => {
-                if (selectedColors.includes(color.id)) {
-                  setSelectedColors(selectedColors.filter((c) => c !== color.id))
-                } else {
-                  setSelectedColors([...selectedColors, color.id])
-                }
-              }}
-              className={cn(
-                "w-9 h-9 rounded-full transition-all flex items-center justify-center",
-                selectedColors.includes(color.id)
-                  ? "ring-2 ring-offset-2 ring-[#1a365d] scale-110"
-                  : "hover:scale-105 ring-1 ring-border/50",
-              )}
-              style={{ backgroundColor: color.hex }}
-              title={t(color.nameAr, color.nameEn)}
-            >
-              {selectedColors.includes(color.id) && (
-                <span className={cn("text-xs font-bold", color.hex === "#FFFFFF" ? "text-foreground" : "text-white")}>
-                  ✓
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+        <ColorSearchSelector
+          value={null}
+          onChange={() => {}} // Not used in filter mode
+          multiSelect={true}
+          selectedColors={selectedColors}
+          onMultipleChange={setSelectedColors}
+          showLabel={true}
+          label={`${t("الألوان والدرجات", "Colors & Shades")}`}
+          compact={true}
+        />
       </div>
 
       <div className="space-y-3">

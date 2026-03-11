@@ -14,8 +14,13 @@ import { WelcomeBonusModal } from "@/components/welcome-bonus-modal"
 import { ScrollToTop } from "@/components/scroll-to-top"
 import { RecentlyViewedProvider } from "@/contexts/recently-viewed-context"
 import { AIChatAssistant } from "@/components/ai-chat-assistant"
+import { SupportChat } from "@/components/support-chat"
 import { ConsoleWelcome } from "@/components/console-welcome"
 import { SplashScreenProvider } from "@/components/splash-screen-provider"
+// New System Providers
+import { StockProvider } from "@/contexts/stock-context"
+import { OrderProvider } from "@/contexts/order-context"
+import { ReviewsProvider } from "@/contexts/reviews-context"
 import "./globals.css"
 
 const cairo = Cairo({
@@ -182,14 +187,21 @@ export default function RootLayout({
                 <LoyaltyProvider>
                   <RecentlyViewedProvider>
                     <CartProvider>
-                      <ChatProvider>
-                        <ScrollToTop />
-                        {children}
-                        <WelcomeModal />
-                        <WelcomeBonusModal />
-                        <AIChatAssistant />
-                        <Toaster />
-                      </ChatProvider>
+                      <StockProvider>
+                        <OrderProvider>
+                          <ReviewsProvider>
+                            <ChatProvider>
+                              <ScrollToTop />
+                              {children}
+                              <WelcomeModal />
+                              <WelcomeBonusModal />
+                              <AIChatAssistant />
+                              <SupportChat />
+                              <Toaster />
+                            </ChatProvider>
+                          </ReviewsProvider>
+                        </OrderProvider>
+                      </StockProvider>
                     </CartProvider>
                   </RecentlyViewedProvider>
                 </LoyaltyProvider>

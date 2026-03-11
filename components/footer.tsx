@@ -630,8 +630,8 @@ export function Footer() {
           {/* Store Status Badge */}
           <div className="flex justify-center">
             <motion.div
-              animate={{ opacity: [0.8, 1, 0.8] }}
-              transition={{ duration: 3, repeat: Infinity }}
+              animate={{ opacity: [0.8, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity, repeatType: "reverse" }}
               className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-400 text-xs"
             >
               <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
